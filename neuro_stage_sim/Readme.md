@@ -11,9 +11,9 @@ First you need to install the following debs for *TurtleBot*:
 Install the Package
 --------------
 
-Clone the package into your `/catkin_ws/src/` directory:
+Download the zipped repository (you could also clone it) and place the `neuro_stage_sim` folder into your `/catkin_ws/src/` directory:
 
-    git clone git@github.com:whatever folder-name
+    https://github.com/JakobBreuninger/neurobotics/archive/master.zip
 
 Go into your `/catkin_ws/` directory and compile the new package with:
 
@@ -38,4 +38,4 @@ By default the robot is put into the `maze` environment. If you want to switch t
     <arg name="map_file"       default="$(find neuro_stage_sim)/maps/robopark_plan.yaml"/>
     <arg name="world_file"     default="$(find neuro_stage_sim)/maps/stage/robopark_plan.world"/>
 
-By default *stage* is set to run 3 times as fast as real-time. To change this go into `maze.world` or `robopark_plan.world` and change the parameter `speedup` 
+By default *stage* is set to run 3 times as fast as real-time. To change this go into `maze.world` or `robopark_plan.world` and change the parameter `speedup`
