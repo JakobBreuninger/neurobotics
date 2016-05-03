@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <name>neuro_stage_sim</name>
+  <version>1.0.0</version>
+  <description>
+    2D Simulation launching package for now with turtlebot
+  </description>
+
+  <maintainer email="jakob_breuninger@gmx.de">Jakob Breuninger</maintainer>
+  <author email="jakob_breuninger@gmx.de">Jakob Breuninger</author>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>stage_ros</run_depend>
+  <run_depend>navigation</run_depend>
+  <run_depend>turtlebot_bringup</run_depend>
+  <run_depend>turtlebot_navigation</run_depend>
+  <run_depend>yocs_virtual_sensor</run_depend>
+  <run_depend>yocs_velocity_smoother</run_depend>
+</package>
