@@ -1,7 +1,10 @@
 Neurobotics Repository
 ==============
 
-Included Packages
+local_planner_wrapper
 --------------
-1. Local Planner: Empty
-2. Stage Simulator: Check Readme
+Under construction.
+
+neuro_stage_sim
+--------------
+Under construction. First simulation possible.
