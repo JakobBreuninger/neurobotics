@@ -61,7 +61,7 @@
   </node>
 
   <!--  ************** Navigation  ***************  -->
-  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml"/>
+  <include file="$(find neuro_stage_sim)/launch/move_base.launch.xml"/>
 
   <!--  ****** Maps *****  -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)">

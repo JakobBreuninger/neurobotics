@@ -39,3 +39,14 @@ By default the robot is put into the `maze` environment. If you want to switch t
     <arg name="world_file"     default="$(find neuro_stage_sim)/maps/stage/robopark_plan.world"/>
 
 By default *stage* is set to run 3 times as fast as real-time. To change this go into `maze.world` or `robopark_plan.world` and change the parameter `speedup`
+
+Run the Local Planner Plugin
+--------------
+
+In the `move_base.launch.xml` file we can use the dummy local planner plugin by uncommenting the following line:
+
+    <!-- param name="base_local_planner" value="local_planner_wrapper/LocalPlannerWrapper"/ -->
+
+And by commenting the following line right above:
+
+    <param name="DWAPlannerROS/global_frame_id" value="$(arg odom_frame_id)"/>
