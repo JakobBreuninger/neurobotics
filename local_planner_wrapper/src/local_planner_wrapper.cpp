@@ -13,7 +13,7 @@ namespace local_planner_wrapper
     // --> Part of interface
     LocalPlannerWrapper::LocalPlannerWrapper() : initialized_(false)
     {
-
+	
     }
 
     // Desctructor
@@ -39,6 +39,10 @@ namespace local_planner_wrapper
             ros::NodeHandle private_nh("~/" + name);
             g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
+            updated_costmap_pub_ = 
+                private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
+            costmap_sub_ = 
+                private_nh.subscribe<nav_msgs::OccupancyGrid>("", 1000, updateCostmap);
 
             // Setup tf
             tf_ = tf;
@@ -47,6 +51,7 @@ namespace local_planner_wrapper
             costmap_ros_ = costmap_ros;
             costmap_ros_->getRobotPose(current_pose_);
             costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
+            updated_costmap_ = *costmap_ros_;
 
             // We are now ininialized
             initialized_ = true;
@@ -113,4 +118,11 @@ namespace local_planner_wrapper
     {
         // base_local_planner::publishPlan(path, g_plan_pub_);
     }
+
+    void LocalPlannerWrapper::updateCostmap()
+    {
+        updated_costmap_.
+        updated_costmap_pub_.publish(updated_costmap_);
+    }
+
 };

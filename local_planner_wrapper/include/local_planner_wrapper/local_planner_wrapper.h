@@ -64,14 +64,22 @@ namespace local_planner_wrapper
             // Return:              nothing
             void publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path);
 
+            void updateCostmap();
+
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
 
             // For visualisation, publishers of global and local plan
             ros::Publisher g_plan_pub_, l_plan_pub_;
 
+            // Visualize the update costmap
+            ros::Publisher updated_costmap_pub_;
+
             // Our costmap
             costmap_2d::Costmap2DROS* costmap_ros_;
+
+            // The updated costmap
+            costmap_2d::Costmap2DROS updated_costmap_;
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
