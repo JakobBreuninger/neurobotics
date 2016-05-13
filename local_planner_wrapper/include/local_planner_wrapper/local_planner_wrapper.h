@@ -8,6 +8,9 @@
 #include <nav_core/base_local_planner.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <nav_msgs/Path.h>
+#include <pluginlib/class_loader.h>
+
 
 // We use namespaces to keep things seperate under all the planners
 namespace local_planner_wrapper
@@ -52,19 +55,10 @@ namespace local_planner_wrapper
 
         private:
 
-            // Publish the local plan
-            // path:                could be extrapolated from our velocity commands? probably really short line or
-            //                      curve. Maybe interesting for visualisation/debugging
+            // Callback function for the subscriber to the local costmap
+            // costmap:             this is the costmap message
             // Return:              nothing
-            void publishLocalPlan(std::vector<geometry_msgs::PoseStamped>& path);
-
-            // Publish the global plan (could be necessary if we don't use the full global plan)
-            // path:                this is the part of the global plan we're following at the moment (could be a
-            //                      fraction of the full plan)
-            // Return:              nothing
-            void publishGlobalPlan(std::vector<geometry_msgs::PoseStamped>& path);
-
-            void updateCostmap();
+            void updateCostmap(nav_msgs::OccupancyGrid costmap);
 
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
@@ -75,14 +69,30 @@ namespace local_planner_wrapper
             // Visualize the update costmap
             ros::Publisher updated_costmap_pub_;
 
-            // Our costmap
+            // Subscribe to the costmap
+            ros::Subscriber costmap_sub_;
+
+            // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;
 
+            // Our actual costmap
+            costmap_2d::Costmap2D* costmap_;
+
             // The updated costmap
-            costmap_2d::Costmap2DROS updated_costmap_;
+            nav_msgs::OccupancyGrid updated_costmap_;
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
+
+            // The current global plan in normal and costmap coordinates
+            std::vector<geometry_msgs::PoseStamped> global_plan_;
+            std::vector<std::pair<unsigned int, unsigned int> > costmap_global_plan_;
+
+            // Should we use the dwa planner to gather samples?
+            // Then we need all of these variables...
+            bool dwa_;
+            pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_;
+            boost::shared_ptr<nav_core::BaseLocalPlanner> tc_;
 
             // Are we initialized?
             bool initialized_;
