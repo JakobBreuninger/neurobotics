@@ -48,3 +48,4 @@ catkin_package(
 )
 
 add_library(local_planner_wrapper src/local_planner_wrapper.cpp)
+target_link_libraries(local_planner_wrapper ${catkin_LIBRARIES})
