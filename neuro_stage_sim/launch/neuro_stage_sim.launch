@@ -43,6 +43,7 @@
     <remap from="base_scan" to="scan"/>
   </node>
 
+  <!-- Simulation bot -->
   <!--  ***************** Robot Model *****************  -->
   <include file="$(find turtlebot_bringup)/launch/includes/robot.launch.xml">
     <arg name="base" value="$(arg base)" />

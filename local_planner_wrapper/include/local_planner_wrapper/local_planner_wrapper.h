@@ -10,6 +10,7 @@
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Bool.h>
 #include <pluginlib/class_loader.h>
 
 
@@ -72,6 +73,9 @@ namespace local_planner_wrapper
 
             // Subscribe to the costmap
             ros::Subscriber costmap_sub_;
+
+            // Publisher to the stage_sim_bot
+            ros::Publisher state_pub_;
 
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;

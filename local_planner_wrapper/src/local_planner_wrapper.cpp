@@ -40,6 +40,7 @@ namespace local_planner_wrapper
             updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
             costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
                                                 &LocalPlannerWrapper::updateCostmap, this);
+            state_pub_ = private_nh.advertise<std_msgs::Bool>("neuro_stage_sim_bot/new_round", 1);
 
             // Setup tf
             tf_ = tf;
@@ -164,6 +165,12 @@ namespace local_planner_wrapper
         if(dist < 0.15)
         {
             ROS_INFO("We made it to the goal!");
+
+            // Publish that a new round can be started with the stage_sim_bot
+            std_msgs::Bool new_round;
+            new_round.data = true;
+            state_pub_.publish(new_round);
+            ROS_INFO("Published this!\n");
             return true;
         }
         else
