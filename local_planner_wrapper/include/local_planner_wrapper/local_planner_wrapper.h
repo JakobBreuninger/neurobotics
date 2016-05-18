@@ -7,6 +7,7 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <nav_core/base_local_planner.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
 #include <pluginlib/class_loader.h>
@@ -84,13 +85,16 @@ namespace local_planner_wrapper
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
 
+            // Our goal pose
+            geometry_msgs::Pose goal_;
+
             // The current global plan in normal and costmap coordinates
             std::vector<geometry_msgs::PoseStamped> global_plan_;
             std::vector<std::pair<unsigned int, unsigned int> > costmap_global_plan_;
 
-            // Should we use the dwa planner to gather samples?
+            // Should we use an existing planner plugin to gather samples?
             // Then we need all of these variables...
-            bool dwa_;
+            bool existing_plugin_;
             pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_;
             boost::shared_ptr<nav_core::BaseLocalPlanner> tc_;
 

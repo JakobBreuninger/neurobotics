@@ -52,11 +52,11 @@ namespace local_planner_wrapper
             costmap_ = costmap_ros_->getCostmap();
 
             // Should we use the dwa planner?
-            dwa_ = true;
+            existing_plugin_ = true;
             std::string local_planner = "base_local_planner/TrajectoryPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
-            if (dwa_)
+            if (existing_plugin_)
             {
                 try
                 {
@@ -97,13 +97,17 @@ namespace local_planner_wrapper
         // Safe the global plan
         global_plan_ = orig_global_plan;
 
+        // Set the goal position so we can check if we have arrived or not
+        goal_.position.x = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.x;
+        goal_.position.y = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.y;
+
         // If we use the dwa:
         // This code is copied from the dwa_planner
-        if (dwa_)
+        if (existing_plugin_)
         {
-            if(tc_->setPlan(orig_global_plan))
+            if (!tc_->setPlan(orig_global_plan))
             {
-                ROS_ERROR("Successfully set plan!!!");
+                ROS_ERROR("Failed to set plan for existing plugin");
             }
         }
         return true;
@@ -116,21 +120,20 @@ namespace local_planner_wrapper
     bool LocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
         // Should we use the network as a planner or the dwa planner?
-        if (!dwa_)
+        if (!existing_plugin_)
         {
             // Lets drive in circles
             cmd_vel.angular.z = 0.1;
             cmd_vel.linear.x = 0.1;
             return true;
         }
-        // This code is copied from the dwa_planner source code...
+        // Use the existing local planner plugin
         else
         {
             geometry_msgs::Twist cmd;
 
             if(tc_->computeVelocityCommands(cmd))
             {
-                ROS_ERROR("Successfully computed a command");
                 cmd_vel = cmd;
                 return true;
             }
@@ -148,9 +151,20 @@ namespace local_planner_wrapper
     // Return:              True if goal pose was reached
     bool LocalPlannerWrapper::isGoalReached()
     {
-        if(dwa_)
+        // Get current position
+        costmap_ros_->getRobotPose(current_pose_);
+
+        // Get distance from position to goal, probably there is a better way to do this
+        double dist = sqrt(pow((current_pose_.getOrigin().getX() - goal_.position.x
+                                + costmap_->getSizeInMetersX()/2), 2.0)
+                           + pow((current_pose_.getOrigin().getY()  - goal_.position.y
+                                  + costmap_->getSizeInMetersY()/2), 2.0));
+
+        // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
+        if(dist < 0.15)
         {
-            return tc_->isGoalReached();
+            ROS_INFO("We made it to the goal!");
+            return true;
         }
         else
         {
@@ -179,6 +193,10 @@ namespace local_planner_wrapper
                 {
                     updated_costmap_.data[i * width + j] = 50;
                 }
+                else
+                {
+                    updated_costmap_.data[i * width + j] = 100;
+                }
             }
         }
 
@@ -197,11 +215,8 @@ namespace local_planner_wrapper
                 //ROS_ERROR("X: %f, y: %f, i: %i\n", x, y, i);
                 updated_costmap_.data[c_x + c_y*width] = 0;
             }
-
-
         }
 
         updated_costmap_pub_.publish(updated_costmap_);
     }
-
 };
