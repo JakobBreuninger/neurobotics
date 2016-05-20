@@ -54,7 +54,7 @@ namespace local_planner_wrapper
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
-            std::string local_planner = "base_local_planner/TrajectoryPlannerROS";
+            std::string local_planner = "dwa_local_planner/DWAPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
             if (existing_plugin_)
@@ -96,6 +96,7 @@ namespace local_planner_wrapper
         }
 
         // Safe the global plan
+        global_plan_.clear();
         global_plan_ = orig_global_plan;
 
         // Set the goal position so we can check if we have arrived or not
@@ -196,7 +197,7 @@ namespace local_planner_wrapper
         {
             for (int j = 0; j < width; j++)
             {
-                if (updated_costmap_.data[i * width + j] < 99)
+                if (updated_costmap_.data[i * width + j] < 100)
                 {
                     updated_costmap_.data[i * width + j] = 50;
                 }

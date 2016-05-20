@@ -206,11 +206,11 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /map
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Alpha: 0.7
@@ -226,7 +226,7 @@ Visualization Manager:
           Buffer Length: 1
           Class: rviz/Path
           Color: 0; 12; 255
-          Enabled: true
+          Enabled: false
           Line Style: Lines
           Line Width: 0.03
           Name: Planner
@@ -236,7 +236,7 @@ Visualization Manager:
             Z: 0
           Topic: /move_base/DWAPlannerROS/local_plan
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -314,7 +314,7 @@ Visualization Manager:
           Buffer Length: 1
           Class: rviz/Path
           Color: 255; 0; 0
-          Enabled: true
+          Enabled: false
           Line Style: Lines
           Line Width: 0.03
           Name: Planner
@@ -324,7 +324,7 @@ Visualization Manager:
             Z: 0
           Topic: /move_base/DWAPlannerROS/global_plan
           Unreliable: false
-          Value: true
+          Value: false
       Enabled: true
       Name: Global Planning
     - Alpha: 1
@@ -332,7 +332,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.2
       Head Radius: 0.1
       Name: Pose (move_base)
@@ -341,7 +341,7 @@ Visualization Manager:
       Shape: Arrow
       Topic: /move_base/current_goal
       Unreliable: false
-      Value: true
+      Value: false
     - Arrow Length: 0.2
       Class: rviz/PoseArray
       Color: 0; 192; 0
@@ -385,22 +385,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 25.5301
+      Distance: 10.4335
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.79744
-        Y: 2.05026
-        Z: -0.664459
+        X: 1.94119
+        Y: 0.58335
+        Z: -0.664784
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 6.06321
+      Yaw: 6.15821
     Saved: ~
 Window Geometry:
   Displays:

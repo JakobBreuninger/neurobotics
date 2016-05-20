@@ -16,7 +16,7 @@ void botCallback(const std_msgs::Bool new_round)
     if(new_round.data)
     {
         // Set some random points and push them into a vector of points
-        geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6;
+        geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16;
         std::vector<geometry_msgs::Pose> poses;
         x_1.position.x = 2.06546545029;
         x_1.position.y = 4.28590583801;
@@ -42,6 +42,46 @@ void botCallback(const std_msgs::Bool new_round)
         x_6.position.y = 1.24048757553;
         poses.push_back(x_6);
 
+        x_7.position.x = 1.19963455233;
+        x_7.position.y = 9.16037750244;
+        poses.push_back(x_7);
+
+        x_8.position.x = 7.17635631561;
+        x_8.position.y = 5.95679283142;
+        poses.push_back(x_8);
+
+        x_9.position.x = 9.54258537292;
+        x_9.position.y = 6.01641798019;
+        //poses.push_back(x_9);
+
+        x_10.position.x = 6.53284931183;
+        x_10.position.y = 9.24268722534;
+        poses.push_back(x_10);
+
+        x_11.position.x = 1.07045888901;
+        x_11.position.y = 5.65946245193;
+        //poses.push_back(x_11);
+
+        x_12.position.x = 4.60078716278;
+        x_12.position.y = 1.93790030479;
+        //poses.push_back(x_12);
+
+        x_13.position.x = 2.5139811039;
+        x_13.position.y = 4.14342975616;
+        poses.push_back(x_13);
+
+        x_14.position.x = 7.66414833069;
+        x_14.position.y = 7.6863527298;
+        poses.push_back(x_14);
+
+        x_15.position.x = 4.87109518051;
+        x_15.position.y = 4.99278640747;
+        //poses.push_back(x_15);
+
+        x_16.position.x = 7.77705907822;
+        x_16.position.y = 7.32463550568;
+        poses.push_back(x_16);
+
         // Now randomly choose two points to use as start pose and goal pose and make sure they are different ones
         srand((unsigned int)time(NULL));
         unsigned long start = rand() % poses.size();
@@ -51,10 +91,16 @@ void botCallback(const std_msgs::Bool new_round)
             goal = rand() % poses.size();
         }
 
+        ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
+
+        // Get random orientation
+        double o = (double)(rand() % 400)/100.0;
+
         // Send new position to stage
         geometry_msgs::Pose pose;
         pose.position = poses.at(start).position;
         pose.orientation.z = 1.0;
+        pose.orientation.w = o;
         stage_pub.publish(pose);
 
         // Uncomment when actually using amcl localization
@@ -65,9 +111,14 @@ void botCallback(const std_msgs::Bool new_round)
         pose_with_co.header.frame_id = "map";
         move_base_pose_pub.publish(pose_with_co);*/
 
+        // Make sure that the global planner is aware of the new position
+        ros::Rate r(1);
+        r.sleep();
+
         // Send new goal position to move_base
         geometry_msgs::PoseStamped goal_pose;
         goal_pose.pose.orientation.z = 1.0;
+        goal_pose.pose.orientation.w = o;
         goal_pose.pose.position = poses.at(goal).position;
         goal_pose.header.frame_id = "map";
         move_base_goal_pub.publish(goal_pose);
@@ -86,6 +137,10 @@ int main(int argc, char **argv)
 
     // Uncomment when using real amcl localization
     //move_base_pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
+
+    // Make sure that the global planner is aware of the new position
+    ros::Rate r(0.1);
+    r.sleep();
 
     // Send an initial goal position to move_base
     geometry_msgs::PoseStamped goal_pose;
