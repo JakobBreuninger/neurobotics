@@ -11,7 +11,7 @@ namespace local_planner_wrapper
     LocalPlannerWrapper::LocalPlannerWrapper() : initialized_(false),
                                                  blp_loader_("nav_core", "nav_core::BaseLocalPlanner")
     {
-	
+
     }
 
     // Desctructor
@@ -39,7 +39,30 @@ namespace local_planner_wrapper
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
             updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
             costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
+                                                &LocalPlannerWrapper::filterCostmap, this);
+            costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
                                                 &LocalPlannerWrapper::updateCostmap, this);
+
+            // --- Just for testing: ---
+            // initialization of cost map as only updates are received
+            filtereded_costmap_ = nav_msgs::OccupancyGrid();
+
+            filtereded_costmap_.info.height = 80;
+            filtereded_costmap_.info.width = 80;
+            filtereded_costmap_.info.resolution = 0.05;
+            filtereded_costmap_.info.origin.position.x = -1.95;
+            filtereded_costmap_.info.origin.position.y = -1.95;
+            filtereded_costmap_.info.origin.position.z = 0.0;
+            filtereded_costmap_.info.origin.orientation.x = 0.0;
+            filtereded_costmap_.info.origin.orientation.y = 0.0;
+            filtereded_costmap_.info.origin.orientation.z = 0.0;
+            filtereded_costmap_.info.origin.orientation.w = 1.0;
+
+            std::vector<int8_t> data(6400,1);
+            filtereded_costmap_.data = data;
+
+            // -------------------------------------
+
 
             // Setup tf
             tf_ = tf;
@@ -130,7 +153,7 @@ namespace local_planner_wrapper
 
             if(tc_->computeVelocityCommands(cmd))
             {
-                ROS_ERROR("Successfully computed a command");
+                // ROS_ERROR("Successfully computed a command");
                 cmd_vel = cmd;
                 return true;
             }
@@ -159,25 +182,57 @@ namespace local_planner_wrapper
     }
 
 
+    // Callback function for the subscriber to the local costmap update
+    // costmap_update:      this is the costmap message
+    // Return:              nothing
+    void LocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
+
+        std::cout << "Costmap update received -> update costmap!!!" << std::endl;
+
+        int index = 0;
+
+        for(int y = costmap_update.y; y < costmap_update.y + costmap_update.height; y++)
+        {
+            for(int x = costmap_update.x; x < costmap_update.x + costmap_update.width; x++)
+            {
+                filtereded_costmap_.data[getIndex(x,y)] = costmap_update.data[index++];
+            }
+        }
+        filterCostmap(filtereded_costmap_);
+
+    }
+
+
+    // Get index for costmap update
+    // x:
+    // y:
+    // Return:
+    int LocalPlannerWrapper::getIndex(int x, int y)
+    {
+        int costmap_width = filtereded_costmap_.info.width;
+        return y * costmap_width + x;
+    }
+
+
     // Callback function for the subscriber to the local costmap
     // costmap:             this is the costmap message
     // Return:              nothing
-    void LocalPlannerWrapper::updateCostmap(nav_msgs::OccupancyGrid costmap)
+    void LocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
     {
-        updated_costmap_ = costmap;
+        filtereded_costmap_ = costmap;
 
         // Get costmap size
-        int width = updated_costmap_.info.width;
-        int height = updated_costmap_.info.height;
+        int width = filtereded_costmap_.info.width;
+        int height = filtereded_costmap_.info.height;
 
         // Change the costmap
         for (int i = 0; i < height; i++)
         {
             for (int j = 0; j < width; j++)
             {
-                if (updated_costmap_.data[i * width + j] < 99)
+                if (filtereded_costmap_.data[i * width + j] < 99)
                 {
-                    updated_costmap_.data[i * width + j] = 50;
+                    filtereded_costmap_.data[i * width + j] = 50;
                 }
             }
         }
@@ -195,13 +250,15 @@ namespace local_planner_wrapper
             if (costmap_->worldToMap(x, y, c_x, c_y))
             {
                 //ROS_ERROR("X: %f, y: %f, i: %i\n", x, y, i);
-                updated_costmap_.data[c_x + c_y*width] = 0;
+                filtereded_costmap_.data[c_x + c_y*width] = 0;
             }
 
 
         }
 
-        updated_costmap_pub_.publish(updated_costmap_);
+        std::cout << "And now publish filtered costmap on specified topic!!!" << std::endl;
+
+        updated_costmap_pub_.publish(filtereded_costmap_);
     }
 
 };

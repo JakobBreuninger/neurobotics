@@ -11,6 +11,8 @@
 #include <nav_msgs/Path.h>
 #include <pluginlib/class_loader.h>
 
+#include <nav_msgs/OccupancyGrid.h>
+#include <map_msgs/OccupancyGridUpdate.h>
 
 // We use namespaces to keep things seperate under all the planners
 namespace local_planner_wrapper
@@ -55,10 +57,21 @@ namespace local_planner_wrapper
 
         private:
 
+            // Get index for costmap update
+            // x:
+            // y:
+            // Return:
+            int getIndex(int x, int y);
+
+            // Callback function for the subscriber to the local costmap update
+            // costmap_update:      this is the costmap message
+            // Return:              nothing
+            void updateCostmap(map_msgs::OccupancyGridUpdate costmap_update);
+
             // Callback function for the subscriber to the local costmap
             // costmap:             this is the costmap message
             // Return:              nothing
-            void updateCostmap(nav_msgs::OccupancyGrid costmap);
+            void filterCostmap(nav_msgs::OccupancyGrid costmap);
 
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
@@ -72,6 +85,9 @@ namespace local_planner_wrapper
             // Subscribe to the costmap
             ros::Subscriber costmap_sub_;
 
+            // Subscribe to the costmap update
+            ros::Subscriber costmap_update_sub_;
+
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;
 
@@ -79,7 +95,7 @@ namespace local_planner_wrapper
             costmap_2d::Costmap2D* costmap_;
 
             // The updated costmap
-            nav_msgs::OccupancyGrid updated_costmap_;
+            nav_msgs::OccupancyGrid filtereded_costmap_;
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
