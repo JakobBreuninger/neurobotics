@@ -20,6 +20,7 @@
   <arg name="initial_pose_a" default="0.0"/>
 
   <param name="/use_sim_time" value="true"/>
+
   <!--  ******************** Stage ********************  -->
   <!--
         Publishes transforms:
@@ -44,6 +45,9 @@
   </node>
 
   <!-- Simulation bot -->
+  <node pkg="neuro_stage_sim" type="neuro_stage_sim_bot" name="neuro_stage_sim_bot" args="">
+  </node>
+
   <!--  ***************** Robot Model *****************  -->
   <include file="$(find turtlebot_bringup)/launch/includes/robot.launch.xml">
     <arg name="base" value="$(arg base)" />
@@ -69,7 +73,7 @@
     <param name="frame_id" value="/map"/>
   </node>
 
-  <include file="$(find turtlebot_navigation)/launch/includes/amcl.launch.xml">
+  <include file="$(find neuro_stage_sim)/launch/amcl.launch.xml">
     <arg name="scan_topic" value="scan"/>
     <arg name="use_map_topic" value="true"/>
     <arg name="initial_pose_x" value="$(arg initial_pose_x)"/>

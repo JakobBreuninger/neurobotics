@@ -40,7 +40,7 @@ namespace local_planner_wrapper
             updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
             costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
                                                 &LocalPlannerWrapper::updateCostmap, this);
-            state_pub_ = private_nh.advertise<std_msgs::Bool>("neuro_stage_sim_bot/new_round", 1);
+            state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
             // Setup tf
             tf_ = tf;
@@ -162,7 +162,7 @@ namespace local_planner_wrapper
                                   + costmap_->getSizeInMetersY()/2), 2.0));
 
         // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
-        if(dist < 0.15)
+        if(dist < 0.2)
         {
             ROS_INFO("We made it to the goal!");
 
@@ -170,7 +170,7 @@ namespace local_planner_wrapper
             std_msgs::Bool new_round;
             new_round.data = true;
             state_pub_.publish(new_round);
-            ROS_INFO("Published this!\n");
+            global_plan_.clear();
             return true;
         }
         else

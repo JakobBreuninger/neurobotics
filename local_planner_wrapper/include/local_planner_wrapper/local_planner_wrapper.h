@@ -94,7 +94,6 @@ namespace local_planner_wrapper
 
             // The current global plan in normal and costmap coordinates
             std::vector<geometry_msgs::PoseStamped> global_plan_;
-            std::vector<std::pair<unsigned int, unsigned int> > costmap_global_plan_;
 
             // Should we use an existing planner plugin to gather samples?
             // Then we need all of these variables...
