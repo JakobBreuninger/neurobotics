@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(stage_ros_custom)
+project(neuro_stage_ros)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -25,19 +25,19 @@ include_directories(
 catkin_package()
 
 # Declare a cpp executable
-add_executable(stageroscustom src/stageros.cpp)
+add_executable(neuro_stage_ros src/stageros.cpp)
 set(${PROJECT_NAME}_extra_libs "")
 if(UNIX AND NOT APPLE)
   set(${PROJECT_NAME}_extra_libs dl)
 endif()
-target_link_libraries(stageroscustom
+target_link_libraries(neuro_stage_ros
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${STAGE_LIBRARIES}
   ${${PROJECT_NAME}_extra_libs}
 )
 if(catkin_EXPORTED_TARGETS)
-  add_dependencies(stageroscustom ${catkin_EXPORTED_TARGETS})
+  add_dependencies(neuro_stage_ros ${catkin_EXPORTED_TARGETS})
 endif()
 
 ## Install

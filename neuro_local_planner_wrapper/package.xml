@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>local_planner_wrapper</name>
+  <name>neuro_local_planner_wrapper</name>
   <version>0.0.0</version>
-  <description>The local_planner_wrapper package</description>
+  <description>The neuro_local_planner_wrapper package</description>
 
   <maintainer email="jakob_breuninger@gmx.de">jakob</maintainer>
 

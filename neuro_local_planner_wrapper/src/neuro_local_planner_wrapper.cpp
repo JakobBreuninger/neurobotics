@@ -1,22 +1,22 @@
-#include <local_planner_wrapper/local_planner_wrapper.h>
+#include <neuro_local_planner_wrapper/neuro_local_planner_wrapper.h>
 #include <pluginlib/class_list_macros.h>
 
 // Register this planner as a BaseLocalPlanner plugin
-PLUGINLIB_EXPORT_CLASS(local_planner_wrapper::LocalPlannerWrapper, nav_core::BaseLocalPlanner)
+PLUGINLIB_EXPORT_CLASS(neuro_local_planner_wrapper::NeuroLocalPlannerWrapper, nav_core::BaseLocalPlanner)
 
-namespace local_planner_wrapper
+namespace neuro_local_planner_wrapper
 {
     // Constructor
     // --> Part of interface
-    LocalPlannerWrapper::LocalPlannerWrapper() : initialized_(false),
+    NeuroLocalPlannerWrapper::NeuroLocalPlannerWrapper() : initialized_(false),
                                                  blp_loader_("nav_core", "nav_core::BaseLocalPlanner")
     {
 	
     }
 
-    // Desctructor
+    // Destructor
     // --> Part of interface
-    LocalPlannerWrapper::~LocalPlannerWrapper()
+    NeuroLocalPlannerWrapper::~NeuroLocalPlannerWrapper()
     {
         tc_.reset();
     }
@@ -27,7 +27,7 @@ namespace local_planner_wrapper
     // tf:                  this will tell the planner the robots location (i think)
     // costmap_ros:         the costmap
     // Return:              nothing
-    void LocalPlannerWrapper::initialize(std::string name, tf::TransformListener* tf,
+    void NeuroLocalPlannerWrapper::initialize(std::string name, tf::TransformListener* tf,
                                          costmap_2d::Costmap2DROS* costmap_ros)
     {
         // If we are not ininialized do so
@@ -39,7 +39,7 @@ namespace local_planner_wrapper
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
             updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
             costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
-                                                &LocalPlannerWrapper::updateCostmap, this);
+                                                &NeuroLocalPlannerWrapper::updateCostmap, this);
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
             // Setup tf
@@ -86,7 +86,7 @@ namespace local_planner_wrapper
     // orig_global_plan:    this is the global plan we're supposed to follow (a vector of positions forms the
     //                      line)
     // Return:              True if plan was succesfully received...
-    bool LocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
+    bool NeuroLocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
     {
         // Check if the planner has been initialized
         if (!initialized_)
@@ -120,7 +120,7 @@ namespace local_planner_wrapper
     // --> Part of interface
     // cmd_vel:             fill this vector with our velocity commands (the actual output we're producing)
     // Return:              True if we didn't fail
-    bool LocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
+    bool NeuroLocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
         // Should we use the network as a planner or the dwa planner?
         if (!existing_plugin_)
@@ -152,7 +152,7 @@ namespace local_planner_wrapper
     // Tell if goal was reached
     // --> Part of interface
     // Return:              True if goal pose was reached
-    bool LocalPlannerWrapper::isGoalReached()
+    bool NeuroLocalPlannerWrapper::isGoalReached()
     {
         // Get current position
         costmap_ros_->getRobotPose(current_pose_);
@@ -185,7 +185,7 @@ namespace local_planner_wrapper
     // Callback function for the subscriber to the local costmap
     // costmap:             this is the costmap message
     // Return:              nothing
-    void LocalPlannerWrapper::updateCostmap(nav_msgs::OccupancyGrid costmap)
+    void NeuroLocalPlannerWrapper::updateCostmap(nav_msgs::OccupancyGrid costmap)
     {
         updated_costmap_ = costmap;
 
@@ -202,10 +202,6 @@ namespace local_planner_wrapper
                 {
                     updated_costmap_.data[i * width + j] = 50;
                 }
-                else
-                {
-                    updated_costmap_.data[i * width + j] = 100;
-                }
             }
         }
 
@@ -221,7 +217,6 @@ namespace local_planner_wrapper
             // Transform to costmap coordinates of the current global path point if possible
             if (costmap_->worldToMap(x, y, c_x, c_y))
             {
-                //ROS_ERROR("X: %f, y: %f, i: %i\n", x, y, i);
                 updated_costmap_.data[c_x + c_y*width] = 0;
             }
         }

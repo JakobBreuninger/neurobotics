@@ -1,15 +1,15 @@
-#include <keep_going_recovery/keep_going_recovery.h>
+#include <neuro_fake_recovery/neuro_fake_recovery.h>
 #include <pluginlib/class_list_macros.h>
 
 //register this planner as a RecoveryBehavior plugin
-PLUGINLIB_DECLARE_CLASS(keep_going_recovery, KeepGoingRecovery, keep_going_recovery::KeepGoingRecovery,
+PLUGINLIB_DECLARE_CLASS(neuro_fake_recovery, NeuroFakeRecovery, neuro_fake_recovery::NeuroFakeRecovery,
                         nav_core::RecoveryBehavior)
 
-namespace keep_going_recovery
+namespace neuro_fake_recovery
 {
-    KeepGoingRecovery::KeepGoingRecovery(): initialized_(false){}
+    NeuroFakeRecovery::NeuroFakeRecovery(): initialized_(false){}
 
-    void KeepGoingRecovery::initialize(std::string name, tf::TransformListener* tf,
+    void NeuroFakeRecovery::initialize(std::string name, tf::TransformListener* tf,
                                     costmap_2d::Costmap2DROS* global_costmap, costmap_2d::Costmap2DROS* local_costmap)
     {
         if(!initialized_)
@@ -28,12 +28,12 @@ namespace keep_going_recovery
         }
     }
 
-    KeepGoingRecovery::~KeepGoingRecovery()
+    NeuroFakeRecovery::~NeuroFakeRecovery()
     {
 
     }
 
-    void KeepGoingRecovery::runBehavior()
+    void NeuroFakeRecovery::runBehavior()
     {
         if(!initialized_){
             ROS_ERROR("This object must be initialized before runBehavior is called");

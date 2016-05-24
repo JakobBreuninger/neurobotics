@@ -220,7 +220,7 @@ Visualization Manager:
           Draw Behind: false
           Enabled: true
           Name: Costmap
-          Topic: /move_base/LocalPlannerWrapper/updated_costmap
+          Topic: /move_base/NeuroLocalPlannerWrapper/updated_costmap
           Unreliable: false
           Value: true
         - Alpha: 1

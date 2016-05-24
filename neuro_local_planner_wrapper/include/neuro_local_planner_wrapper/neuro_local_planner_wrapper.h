@@ -1,5 +1,5 @@
-#ifndef LOCAL_PLANNER_WRAPPER_LOCAL_PLANNER_WRAPPER_H_
-#define LOCAL_PLANNER_WRAPPER_LOCAL_PLANNER_WRAPPER_H_
+#ifndef NEURO_LOCAL_PLANNER_WRAPPER_NEURO_LOCAL_PLANNER_WRAPPER_H_
+#define NEURO_LOCAL_PLANNER_WRAPPER_NEURO_LOCAL_PLANNER_WRAPPER_H_
 
 #include <tf/transform_listener.h>
 #include <angles/angles.h>
@@ -15,19 +15,19 @@
 
 
 // We use namespaces to keep things seperate under all the planners
-namespace local_planner_wrapper
+namespace neuro_local_planner_wrapper
 {
-    class LocalPlannerWrapper : public nav_core::BaseLocalPlanner
+    class NeuroLocalPlannerWrapper : public nav_core::BaseLocalPlanner
     {
         public:
 
             // Constructor
             // --> Part of interface
-            LocalPlannerWrapper();
+            NeuroLocalPlannerWrapper();
 
             // Desctructor
             // --> Part of interface
-            ~LocalPlannerWrapper();
+            ~NeuroLocalPlannerWrapper();
 
             // Initialize the planner
             // --> Part of interface

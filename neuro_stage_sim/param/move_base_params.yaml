@@ -14,7 +14,7 @@ oscillation_timeout: 10.0
 oscillation_distance: 0.2
 
 # local planner - default is trajectory rollout
-base_local_planner: "local_planner_wrapper/LocalPlannerWrapper"
+base_local_planner: "neuro_local_planner_wrapper/NeuroLocalPlannerWrapper"
 
 base_global_planner: "navfn/NavfnROS" #alternatives: global_planner/GlobalPlanner, carrot_planner/CarrotPlanner
 
@@ -24,6 +24,6 @@ base_global_planner: "navfn/NavfnROS" #alternatives: global_planner/GlobalPlanne
 #recovery_behavior_enabled: true
 
 recovery_behaviors:
-  - name: 'keep_going_recovery'
-    type: 'keep_going_recovery/KeepGoingRecovery'
+  - name: 'neuro_fake_recovery'
+    type: 'neuro_fake_recovery/NeuroFakeRecovery'
 

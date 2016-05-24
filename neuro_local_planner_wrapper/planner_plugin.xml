@@ -1,0 +1,9 @@
+<library path="lib/libneuro_local_planner_wrapper">
+  <class name="neuro_local_planner_wrapper/NeuroLocalPlannerWrapper"
+         type="neuro_local_planner_wrapper::NeuroLocalPlannerWrapper"
+         base_class_type="nav_core::BaseLocalPlanner">
+      <description>
+          A implementation of an empty local planner
+      </description>
+  </class>
+</library>

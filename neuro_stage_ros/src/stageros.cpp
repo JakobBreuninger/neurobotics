@@ -397,10 +397,10 @@ StageNode::SubscribeModels()
         new_robot->ground_truth_pub = n_.advertise<nav_msgs::Odometry>(mapName(BASE_POSE_GROUND_TRUTH, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10);
         new_robot->cmdvel_sub = n_.subscribe<geometry_msgs::Twist>(mapName(CMD_VEL, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::cmdvelReceived, this, r, _1));
         //new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>(mapName(POSE, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::poseReceived, this, r, _1));
-        new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>("stage_ros_custom/set_pose", 10, boost::bind(&StageNode::poseReceived, this, r, _1));
+        new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>("neuro_stage_ros/set_pose", 10, boost::bind(&StageNode::poseReceived, this, r, _1));
 
         //new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>(mapName(POSESTAMPED, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::poseStampedReceived, this, r, _1));
-        new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>("stage_ros_custom/set_pose_stamped", 10, boost::bind(&StageNode::poseStampedReceived, this, r, _1));
+        new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>("neuro_stage_ros/set_pose_stamped", 10, boost::bind(&StageNode::poseStampedReceived, this, r, _1));
 
         for (size_t s = 0;  s < new_robot->lasermodels.size(); ++s)
         {

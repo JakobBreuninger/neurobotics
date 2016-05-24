@@ -13,8 +13,8 @@ catkin_package(
         pluginlib
 )
 
-add_executable(neuro_stage_sim_bot src/neuro_stage_sim_bot.cpp)
-target_link_libraries(neuro_stage_sim_bot ${catkin_LIBRARIES})
+add_executable(neuro_training_bot src/neuro_training_bot.cpp)
+target_link_libraries(neuro_training_bot ${catkin_LIBRARIES})
 
-add_library(keep_going_recovery src/keep_going_recovery.cpp)
-target_link_libraries(keep_going_recovery ${catkin_LIBRARIES})
+add_library(neuro_fake_recovery src/neuro_fake_recovery.cpp)
+target_link_libraries(neuro_fake_recovery ${catkin_LIBRARIES})

@@ -1,5 +1,5 @@
-#ifndef KEEP_GOING_RECOVERY_H_
-#define KEEP_GOING_RECOVERY_H_
+#ifndef NEURO_FAKE_RECOVERY_H_
+#define NEURO_FAKE_RECOVERY_H_
 #include <nav_core/recovery_behavior.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <tf/transform_listener.h>
@@ -7,12 +7,12 @@
 #include <base_local_planner/costmap_model.h>
 #include <std_msgs/Bool.h>
 
-namespace keep_going_recovery{
+namespace neuro_fake_recovery{
     /**
      * @class KeepGoingRecovery
      * @brief A recovery behavior that beams the robot to a new location with a new goal point if its stuck
      */
-    class KeepGoingRecovery : public nav_core::RecoveryBehavior
+    class NeuroFakeRecovery : public nav_core::RecoveryBehavior
     {
         public:
             /**
@@ -20,7 +20,7 @@ namespace keep_going_recovery{
              * @param
              * @return
              */
-            KeepGoingRecovery();
+            NeuroFakeRecovery();
 
             /**
              * @brief  Initialization function for the KeepGoingRecovery recovery behavior
@@ -39,7 +39,7 @@ namespace keep_going_recovery{
             /**
              * @brief  Destructor
              */
-            ~KeepGoingRecovery();
+            ~NeuroFakeRecovery();
 
         private:
             std::string name_;
