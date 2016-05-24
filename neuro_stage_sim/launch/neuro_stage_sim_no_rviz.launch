@@ -5,6 +5,7 @@
   - move_base
   - static map
   - amcl
+  - rviz view
  -->
 <launch>
   <arg name="base"       default="$(optenv TURTLEBOT_BASE kobuki)"/>  <!-- create, rhoomba -->
@@ -35,7 +36,7 @@
         Args:
           -g : run in headless mode.
   -->
-  <node pkg="stage_ros_custom" type="stageroscustom" name="stageroscustom" args="$(arg world_file)">
+  <node pkg="neuro_stage_ros" type="neuro_stage_ros" name="neuro_stage_ros" args="$(arg world_file)">
     <param name="base_watchdog_timeout" value="0.5"/>
     <remap from="odom" to="odom"/>
     <remap from="base_pose_ground_truth" to="base_pose_ground_truth"/>
@@ -44,7 +45,7 @@
   </node>
 
   <!-- Simulation bot -->
-  <node pkg="neuro_stage_sim" type="neuro_stage_sim_bot" name="neuro_stage_sim_bot" args="">
+  <node pkg="neuro_stage_sim" type="neuro_training_bot" name="neuro_training_bot" args="">
   </node>
 
   <!--  ***************** Robot Model *****************  -->
@@ -54,8 +55,8 @@
     <arg name="3d_sensor" value="$(arg 3d_sensor)" />
   </include>
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
-      <param name="use_gui" value="true"/>
-    </node>
+    <param name="use_gui" value="true"/>
+  </node>
 
   <!-- Command Velocity multiplexer -->
   <node pkg="nodelet" type="nodelet" name="mobile_base_nodelet_manager" args="manager"/>
