@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /TF1/Frames1
         - /TF1/Tree1
         - /Local Planning1
@@ -206,11 +207,11 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: Map
       Topic: /map
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/Group
       Displays:
         - Alpha: 0.7
@@ -368,7 +369,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:
@@ -385,22 +386,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 10.4335
+      Distance: 11.193
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.94119
-        Y: 0.58335
-        Z: -0.664784
+        X: 0.0563448
+        Y: 0.041136
+        Z: -0.662975
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 6.15821
+      Yaw: 2.71797e-05
     Saved: ~
 Window Geometry:
   Displays:

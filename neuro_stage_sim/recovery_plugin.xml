@@ -1,0 +1,8 @@
+<library path="lib/libkeep_going_recovery">
+    <class name="keep_going_recovery/KeepGoingRecovery" type="keep_going_recovery::KeepGoingRecovery"
+           base_class_type="nav_core::RecoveryBehavior">
+        <description>
+            A recovery behavior that results in the robot being beamed to a new location for learning.
+        </description>
+    </class>
+</library>

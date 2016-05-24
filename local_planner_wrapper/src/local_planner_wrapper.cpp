@@ -110,6 +110,7 @@ namespace local_planner_wrapper
             if (!tc_->setPlan(orig_global_plan))
             {
                 ROS_ERROR("Failed to set plan for existing plugin");
+                return false;
             }
         }
         return true;
@@ -125,8 +126,8 @@ namespace local_planner_wrapper
         if (!existing_plugin_)
         {
             // Lets drive in circles
-            cmd_vel.angular.z = 0.1;
-            cmd_vel.linear.x = 0.1;
+            cmd_vel.angular.z = 0.0;
+            cmd_vel.linear.x = 0.5;
             return true;
         }
         // Use the existing local planner plugin

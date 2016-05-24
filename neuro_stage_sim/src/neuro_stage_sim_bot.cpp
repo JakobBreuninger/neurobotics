@@ -42,45 +42,25 @@ void botCallback(const std_msgs::Bool new_round)
         x_6.position.y = 1.24048757553;
         poses.push_back(x_6);
 
-        x_7.position.x = 1.19963455233;
-        x_7.position.y = 9.16037750244;
-        poses.push_back(x_7);
-
         x_8.position.x = 7.17635631561;
         x_8.position.y = 5.95679283142;
         poses.push_back(x_8);
 
-        x_9.position.x = 9.54258537292;
-        x_9.position.y = 6.01641798019;
-        //poses.push_back(x_9);
+        x_9.position.x = 6.53284931183;
+        x_9.position.y = 9.24268722534;
+        poses.push_back(x_9);
 
-        x_10.position.x = 6.53284931183;
-        x_10.position.y = 9.24268722534;
+        x_10.position.x = 2.5139811039;
+        x_10.position.y = 4.14342975616;
         poses.push_back(x_10);
 
-        x_11.position.x = 1.07045888901;
-        x_11.position.y = 5.65946245193;
-        //poses.push_back(x_11);
+        x_11.position.x = 7.66414833069;
+        x_11.position.y = 7.6863527298;
+        poses.push_back(x_11);
 
-        x_12.position.x = 4.60078716278;
-        x_12.position.y = 1.93790030479;
-        //poses.push_back(x_12);
-
-        x_13.position.x = 2.5139811039;
-        x_13.position.y = 4.14342975616;
-        poses.push_back(x_13);
-
-        x_14.position.x = 7.66414833069;
-        x_14.position.y = 7.6863527298;
-        poses.push_back(x_14);
-
-        x_15.position.x = 4.87109518051;
-        x_15.position.y = 4.99278640747;
-        //poses.push_back(x_15);
-
-        x_16.position.x = 7.77705907822;
-        x_16.position.y = 7.32463550568;
-        poses.push_back(x_16);
+        x_12.position.x = 7.77705907822;
+        x_12.position.y = 7.32463550568;
+        poses.push_back(x_12);
 
         // Now randomly choose two points to use as start pose and goal pose and make sure they are different ones
         srand((unsigned int)time(NULL));
@@ -131,7 +111,11 @@ int main(int argc, char **argv)
 
     ros::NodeHandle n;
 
-    ros::Subscriber sub = n.subscribe("/move_base/LocalPlannerWrapper/new_round", 1000, botCallback);
+    // Subscribers
+    ros::Subscriber sub_planner = n.subscribe("/move_base/LocalPlannerWrapper/new_round", 1000, botCallback);
+    ros::Subscriber sub_recovery = n.subscribe("/move_base/keep_going_recovery/new_round", 1000, botCallback);
+
+    // Publishers
     stage_pub = n.advertise<geometry_msgs::Pose>("stage_ros_custom/set_pose", 1);
     move_base_goal_pub = n.advertise<geometry_msgs::PoseStamped>("move_base_simple/goal", 1);
 
