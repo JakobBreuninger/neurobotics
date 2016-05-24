@@ -7,12 +7,16 @@
 #include <costmap_2d/costmap_2d_ros.h>
 #include <nav_core/base_local_planner.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+#include <std_msgs/Bool.h>
 #include <pluginlib/class_loader.h>
 
 #include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
+
+#include <tf/tf.h>
 
 // We use namespaces to keep things seperate under all the planners
 namespace local_planner_wrapper
@@ -85,6 +89,11 @@ namespace local_planner_wrapper
             // Subscribe to the costmap
             ros::Subscriber costmap_sub_;
 
+
+            // Publisher to the stage_sim_bot
+            ros::Publisher state_pub_;
+
+
             // Subscribe to the costmap update
             ros::Subscriber costmap_update_sub_;
 
@@ -100,13 +109,16 @@ namespace local_planner_wrapper
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
 
+            // Our goal pose
+            geometry_msgs::Pose goal_;
+
+
             // The current global plan in normal and costmap coordinates
             std::vector<geometry_msgs::PoseStamped> global_plan_;
-            std::vector<std::pair<unsigned int, unsigned int> > costmap_global_plan_;
 
             // Should we use the dwa planner to gather samples?
             // Then we need all of these variables...
-            bool dwa_;
+            bool existing_plugin_;
             pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_;
             boost::shared_ptr<nav_core::BaseLocalPlanner> tc_;
 

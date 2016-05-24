@@ -43,9 +43,15 @@ namespace local_planner_wrapper
             costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
                                                 &LocalPlannerWrapper::updateCostmap, this);
 
+
+            state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
+
             // --- Just for testing: ---
             // initialization of cost map as only updates are received
             filtereded_costmap_ = nav_msgs::OccupancyGrid();
+
+            filtereded_costmap_.header.frame_id = "/base_footprint";
+            filtereded_costmap_.header.stamp = ros::Time::now();
 
             filtereded_costmap_.info.height = 80;
             filtereded_costmap_.info.width = 80;
@@ -75,11 +81,11 @@ namespace local_planner_wrapper
             costmap_ = costmap_ros_->getCostmap();
 
             // Should we use the dwa planner?
-            dwa_ = true;
+            existing_plugin_ = true;
             std::string local_planner = "base_local_planner/TrajectoryPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
-            if (dwa_)
+            if (existing_plugin_)
             {
                 try
                 {
@@ -110,6 +116,9 @@ namespace local_planner_wrapper
     // Return:              True if plan was succesfully received...
     bool LocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
     {
+
+        //std::cout << "DRIN" << std::endl;
+
         // Check if the planner has been initialized
         if (!initialized_)
         {
@@ -118,11 +127,16 @@ namespace local_planner_wrapper
         }
 
         // Safe the global plan
+        global_plan_.clear();
         global_plan_ = orig_global_plan;
+
+        // Set the goal position so we can check if we have arrived or not
+        goal_.position.x = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.x;
+        goal_.position.y = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.y;
 
         // If we use the dwa:
         // This code is copied from the dwa_planner
-        if (dwa_)
+        if (existing_plugin_)
         {
             if(tc_->setPlan(orig_global_plan))
             {
@@ -139,21 +153,20 @@ namespace local_planner_wrapper
     bool LocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
         // Should we use the network as a planner or the dwa planner?
-        if (!dwa_)
+        if (!existing_plugin_)
         {
             // Lets drive in circles
             cmd_vel.angular.z = 0.1;
             cmd_vel.linear.x = 0.1;
             return true;
         }
-        // This code is copied from the dwa_planner source code...
+        // Use the existing local planner plugin
         else
         {
             geometry_msgs::Twist cmd;
 
             if(tc_->computeVelocityCommands(cmd))
             {
-                // ROS_ERROR("Successfully computed a command");
                 cmd_vel = cmd;
                 return true;
             }
@@ -171,9 +184,26 @@ namespace local_planner_wrapper
     // Return:              True if goal pose was reached
     bool LocalPlannerWrapper::isGoalReached()
     {
-        if(dwa_)
+        // Get current position
+        costmap_ros_->getRobotPose(current_pose_);
+
+        // Get distance from position to goal, probably there is a better way to do this
+        double dist = sqrt(pow((current_pose_.getOrigin().getX() - goal_.position.x
+                                + costmap_->getSizeInMetersX()/2), 2.0)
+                           + pow((current_pose_.getOrigin().getY()  - goal_.position.y
+                                  + costmap_->getSizeInMetersY()/2), 2.0));
+
+        // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
+        if(dist < 0.2)
         {
-            return tc_->isGoalReached();
+            ROS_INFO("We made it to the goal!");
+
+            // Publish that a new round can be started with the stage_sim_bot
+            std_msgs::Bool new_round;
+            new_round.data = true;
+            state_pub_.publish(new_round);
+            global_plan_.clear();
+            return true;
         }
         else
         {
@@ -187,7 +217,7 @@ namespace local_planner_wrapper
     // Return:              nothing
     void LocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
 
-        std::cout << "Costmap update received -> update costmap!!!" << std::endl;
+        //std::cout << "Costmap update received -> update costmap!!!" << std::endl;
 
         int index = 0;
 
@@ -198,6 +228,9 @@ namespace local_planner_wrapper
                 filtereded_costmap_.data[getIndex(x,y)] = costmap_update.data[index++];
             }
         }
+
+        filtereded_costmap_.header = costmap_update.header;
+
         filterCostmap(filtereded_costmap_);
 
     }
@@ -230,33 +263,42 @@ namespace local_planner_wrapper
         {
             for (int j = 0; j < width; j++)
             {
-                if (filtereded_costmap_.data[i * width + j] < 99)
+                if (filtereded_costmap_.data[i * width + j] < 100)
                 {
                     filtereded_costmap_.data[i * width + j] = 50;
+                }
+                else
+                {
+                    filtereded_costmap_.data[i * width + j] = 100;
                 }
             }
         }
 
         // Transform the global plan into costmap coordinates
-        unsigned int c_x, c_y;
-        double x, y;
-        for (unsigned int i = 0; i < global_plan_.size(); i++)
-        {
-            // Get world coordinates of the current global path point
-            x = global_plan_.at(i).pose.position.x - costmap_->getSizeInMetersX()/2;
-            y = global_plan_.at(i).pose.position.y - costmap_->getSizeInMetersY()/2;
+        unsigned int x, y;
+        geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
+        geometry_msgs::PoseStamped pose_robot_base_frame; // pose given in global frame of the local cost map
 
-            // Transform to costmap coordinates of the current global path point if possible
-            if (costmap_->worldToMap(x, y, c_x, c_y))
+        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_.begin(); it != global_plan_.end(); it++)
+        {
+            // Transform pose from fixed frame of global plan to global frame of local cost map
+            pose_fixed_frame = *it;
+            try
             {
-                //ROS_ERROR("X: %f, y: %f, i: %i\n", x, y, i);
-                filtereded_costmap_.data[c_x + c_y*width] = 0;
+                pose_fixed_frame.header.stamp = costmap.header.stamp;
+                tf_->transformPose(costmap.header.frame_id, pose_fixed_frame, pose_robot_base_frame);
+            }
+            catch (tf::TransformException ex)
+            {
+                ROS_ERROR("%s",ex.what());
             }
 
-
+            // Transformtion to costmap coordinates
+            if (costmap_->worldToMap(pose_robot_base_frame.pose.position.x, pose_robot_base_frame.pose.position.y, x, y))
+            {
+                filtereded_costmap_.data[x + y*width] = 0;
+            }
         }
-
-        std::cout << "And now publish filtered costmap on specified topic!!!" << std::endl;
 
         updated_costmap_pub_.publish(filtereded_costmap_);
     }
