@@ -12,6 +12,7 @@ Panels:
         - /Global Planning1
         - /Global Planning1/Costmap1
         - /Path (global)1
+        - /Map2
       Splitter Ratio: 0.5
     Tree Height: 813
   - Class: rviz/Selection
@@ -511,6 +512,15 @@ Visualization Manager:
       Topic: /move_base/NavfnROS/plan
       Unreliable: false
       Value: false
+    - Alpha: 0.7
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: ""
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -531,22 +541,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.3103
+      Distance: 16.6122
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.22026
-        Y: 1.69579
-        Z: -0.661421
+        X: 3.14716
+        Y: 3.37551
+        Z: -0.665805
       Name: Current View
       Near Clip Distance: 0.01
       Pitch: 1.5698
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 6.06321
+      Yaw: 0.0100269
     Saved: ~
 Window Geometry:
   Displays:
