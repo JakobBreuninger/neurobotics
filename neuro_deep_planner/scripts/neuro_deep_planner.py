@@ -1,98 +1,138 @@
 #!/usr/bin/env python
 
 import rospy
-from nav_msgs.msg import OccupancyGrid
 import numpy as np
-import matplotlib.pyplot as plt
+from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Twist
 
 
-def callback(data):
-    rospy.loginfo("Success")
+class InputSubscriber:
 
-    # Get width and height of the occupancy grid map
-    width = data.info.width
-    height = data.info.height
 
-    # Initialize the array
-    costmap = [[0 for x in range(width)] for y in range(height)]
+    def __init__(self):
 
-    # Transform msg into array
-    for i in range(width):
-        for j in range(height):
-            costmap[i][j] = data.data[i + height * j]
+        self.on_policy = False
 
-    imgplot = plt.imshow(costmap)
+        self.depth = 4
+        self.height = 80
+        self.width = 80#
 
-    plt.show(block=True)
+        self.new_action = np.zeros(2, dtype='float')
+        self.old_action = np.zeros(2, dtype='float')
+
+        self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+        self.old_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+
+        self.reward = 0.0
+
+        self.init = False
+        self.sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid,
+                                    self.input_callback)
+        self.pub = rospy.Publisher("/Full/Path/Goes/Here", Twist)
+
+        self.new_msg = False
+
+
+    def input_callback(self, data):
+
+        # If msg is received for the first time adjust parameters
+        if not self.init:
+            self.depth = data.info.depth
+            self.width = data.info.width
+            self.height = data.info.height
+            self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+            self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+            self.init = True
+
+        # Safe the old costmap and action before we update the new one
+        self.old_costmap = self.new_costmap
+        self.old_action = self.new_action
+
+        # Lets update the new costmap
+        for i in range(self.depth):
+            for j in range(self.width):
+                for k in range(self.height):
+                    self.new_costmap[i][j][k] = data.data[j + self.height * k + self.height * self.width * i]
+
+        # Lets update the new reward
+        self.reward = data.reward
+
+        # Lets update the new action
+        if not self.on_policy:
+            self.new_action[0] = data.action.linear[0]
+            self.new_action[1] = data.action.angular[2]
+
+        # We have received a new msg
+        self.new_msg = True
+
+
+    def publish_action(self):
+
+        vel_cmd = Twist()
+
+        vel_cmd.linear[0] = self.new_action[0]
+        vel_cmd.linear[1] = 0.0
+        vel_cmd.linear[2] = 0.0
+
+        vel_cmd.angular[0] = 0.0
+        vel_cmd.angular[1] = 0.0
+        vel_cmd.angular[3] = self.new_action[1]
+
+        # Send the action back
+        self.pub.publish(self.new_action)
+
+
+class ReplayBuffer:
+
+    def __init__(self):
+
+
+    def set_experience(self, old_costmap, action, reward, new_costmap):
+
+
+    def get_experience(self):
+
+
+    def safe_buffer(self):
+        # Empty
+
+    def load_buffer(self):
+        # Empty
+
 
 
 def main():
+
+    # Initialize the ANNs
+    actor = Q_net()
+    critic = Q_net()
 
     rospy.init_node("neuro_deep_planner", anonymous=False)
 
-    rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid, callback)
+    subscriber = InputSubscriber()
+    subscriber.on_policy = False
 
-    rospy.spin()
+    replay_buffer = ReplayBuffer()
 
+    while not rospy.is_shutdown():
 
-if __name__ == '__main__':
-    main()
+        # If we have a new msg we might have to execute an action and need to put the new experience in the buffer
+        if subscriber.new_msg:
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from cv_bridge import CvBridge, CvBridgeError
-import cv
-from collections import deque
-import rospy
-from sensor_msgs.msg import Image
-import numpy as np
+            # If we are on policy we need to create the new action with the actor net
+            if subscriber.on_policy:
+                subscriber.new_action = actor(subscriber.new_costmap)
 
-class CameraViewer():
+            # Safe the past state and action + the reward and new state into the replay buffer
+            replay_buffer.set_experience(subscriber.old_costmap, subscriber.old_action, subscriber.reward,
+                                         subscriber.new_costmap)
 
-    def __init__( self, root='navbot' ):
+            # Send back the action to execute
+            subscriber.publish_action()
+            subscriber.new_msg = False
+        else:
+            # Train the network!
 
-        self.root = root
-        self.im_data = deque()
-        self.bridge = CvBridge() # For converting ROS images into a readable format
-
-        self.im_fig = plt.figure( 1 )
-        self.im_ax = self.im_fig.add_subplot(111)
-        self.im_ax.set_title("DVS Image")
-        self.im_im = self.im_ax.imshow( np.zeros( ( 256, 256 ),dtype='uint8' ), cmap=plt.cm.gray ) # Blank starting image
-        #self.im_im = self.im_ax.imshow( np.zeros( ( 256, 256 ),dtype='float32' ), cmap=plt.cm.gray ) # Tried a different format, also didn't work
-        self.im_fig.show()
-        self.im_im.axes.figure.canvas.draw()
-
-    def im_callback( self, data ):
-
-        cv_im = self.bridge.imgmsg_to_cv( data, "mono8" ) # Convert Image from ROS Message to greyscale CV Image
-        im = np.asarray( cv_im ) # Convert from CV image to numpy array
-        #im = np.asarray( cv_im, dtype='float32' ) / 256 # Tried a different format, also didn't work
-        self.im_data.append( im )
-
-    def run( self ):
-
-        rospy.init_node('camera_viewer', anonymous=True)
-
-        sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid, callback)
-
-        while not rospy.is_shutdown():
-            if self.im_data:
-                im = self.im_data.popleft()
-
-                #######################################################
-                # The following code is supposed to display the image:
-                #######################################################
-
-                self.im_im.set_cmap( 'gray' ) # This doesn't seem to do anything
-                self.im_im.set_data( im ) # This won't show greyscale images
-                #self.im_ax.imshow( im, cmap=plt.cm.gray ) # If I use this, the code runs unbearably slow
-                self.im_im.axes.figure.canvas.draw()
-
-def main():
-
-    viewer = CameraViewer( root='navbot' )
-    viewer.run()
 
 if __name__ == '__main__':
     main()
