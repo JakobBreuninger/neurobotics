@@ -2,7 +2,6 @@
 
   <node name="costmap_2d_node" pkg="costmap_2d" type="costmap_2d_node" >
     <rosparam file="$(find neuro_stage_sim)/param/costmap_2d_node.yaml" command="load" />
-    <param name="/use_sim_time" value="false"/>
   </node>
 
 </launch>

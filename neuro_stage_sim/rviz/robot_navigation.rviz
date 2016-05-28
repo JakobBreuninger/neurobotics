@@ -13,6 +13,7 @@ Panels:
         - /Global Planning1/Costmap1
         - /Path (global)1
         - /Map2
+        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 813
   - Class: rviz/Selection
@@ -364,11 +365,11 @@ Visualization Manager:
           Class: rviz/Map
           Color Scheme: map
           Draw Behind: false
-          Enabled: true
+          Enabled: false
           Name: Costmap
           Topic: /move_base/local_costmap/costmap
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
@@ -518,8 +519,16 @@ Visualization Manager:
       Draw Behind: false
       Enabled: true
       Name: Map
-      Topic: ""
+      Topic: /move_base/LocalPlannerWrapper/customized_costmap
       Unreliable: false
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /move_base/LocalPlannerWrapper/visualization_marker
+      Name: Marker
+      Namespaces:
+        "": true
+      Queue Size: 10
       Value: true
   Enabled: true
   Global Options:
@@ -541,7 +550,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 16.6122
+      Distance: 15.4501
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1

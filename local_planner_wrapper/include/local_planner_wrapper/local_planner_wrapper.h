@@ -15,6 +15,9 @@
 
 #include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
+#include <sensor_msgs/LaserScan.h>
+
+#include <visualization_msgs/MarkerArray.h> // to_delete
 
 #include <tf/tf.h>
 
@@ -77,6 +80,11 @@ namespace local_planner_wrapper
             // Return:              nothing
             void filterCostmap(nav_msgs::OccupancyGrid costmap);
 
+            // Callback function for the subscriber to laser scan
+            // laser_scan:          this is the laser scan message
+            // Return:              nothing
+            void getLaserScanPoints(sensor_msgs::LaserScan laser_scan);
+
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
 
@@ -97,6 +105,16 @@ namespace local_planner_wrapper
             // Subscribe to the costmap update
             ros::Subscriber costmap_update_sub_;
 
+
+            // Subscribe to laser scan topic
+            ros::Subscriber laser_scan_sub_;
+
+            // Publisher for customized costmap
+            ros::Publisher customized_costmap_pub_;
+
+            ros::Publisher marker_pub_; // to_delete
+
+
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;
 
@@ -105,6 +123,12 @@ namespace local_planner_wrapper
 
             // The updated costmap
             nav_msgs::OccupancyGrid filtereded_costmap_;
+
+            // Customized costmap as state representation of the robot base
+            nav_msgs::OccupancyGrid customized_costmap_;
+
+            // Customized costmap
+            //costmap_2d::Costmap2D customized_costmap_2d_; // to_delete
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
