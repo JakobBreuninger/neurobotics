@@ -217,7 +217,7 @@ namespace neuro_local_planner_wrapper
             // Transform to costmap coordinates of the current global path point if possible
             if (costmap_->worldToMap(x, y, c_x, c_y))
             {
-                updated_costmap_.data[c_x + c_y*width] = 0;
+                updated_costmap_.data[c_x + c_y * width] = 0;
             }
         }
 

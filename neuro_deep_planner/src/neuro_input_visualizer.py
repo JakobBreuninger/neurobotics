@@ -12,12 +12,13 @@ class CostmapVisualizer:
     def __init__(self):
 
         self.im_data = deque()
-        self.im_fig = plt.figure(1)
+        self.im_fig = plt.figure(1, figsize=(40, 5))
         self.im_ax = self.im_fig.add_subplot(111)
-        self.im_ax.set_title("Visualization of Costmap")
-        self.im_im = self.im_ax.imshow(np.zeros((80, 80), dtype='uint8'), cmap=plt.cm.gray, vmin=0, vmax=100,
-                                       interpolation="nearest")
+        self.im_im = self.im_ax.imshow(np.zeros((80, 320), dtype='uint8'), cmap=plt.cm.gray, vmin=0, vmax=100,
+                                       interpolation="nearest", )
+
         self.im_fig.show()
+        plt.axis('off')
         self.im_im.axes.figure.canvas.draw()
 
         self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid,
@@ -27,13 +28,17 @@ class CostmapVisualizer:
 
         width = data.info.width
         height = data.info.height
-        costmap = np.zeros((width, height), dtype='uint8')
-        for i in range(width):
-            for j in range(height):
-                # Somehow we need to change polarity so: 'value' = 100 - 'value'
-                costmap[i][j] = 100 - data.data[i + height * j]
 
-        self.im_data.append(costmap)
+        fake_data = np.asarray([(100 - data) for data in data.data])
+        fake_data = np.hstack((fake_data, fake_data, fake_data, fake_data))
+
+        data_3d = fake_data.reshape(4, 80, 80).swapaxes(1, 2)
+
+        divider = np.full((80, 4), 75)
+
+        stacked_costmap = np.hstack((data_3d[0], divider, data_3d[1], divider, data_3d[2], divider, data_3d[3]))
+
+        self.im_data.append(stacked_costmap)
 
     def run(self):
 
