@@ -68,22 +68,24 @@ namespace local_planner_wrapper
             // x:
             // y:
             // Return:
-            int getIndex(int x, int y);
+            //nt getIndex(int x, int y);
 
             // Callback function for the subscriber to the local costmap update
             // costmap_update:      this is the costmap message
             // Return:              nothing
-            void updateCostmap(map_msgs::OccupancyGridUpdate costmap_update);
+            //void updateCostmap(map_msgs::OccupancyGridUpdate costmap_update);
 
             // Callback function for the subscriber to the local costmap
             // costmap:             this is the costmap message
             // Return:              nothing
-            void filterCostmap(nav_msgs::OccupancyGrid costmap);
+            //void filterCostmap(nav_msgs::OccupancyGrid costmap);
 
             // Callback function for the subscriber to laser scan
             // laser_scan:          this is the laser scan message
             // Return:              nothing
             void getLaserScanPoints(sensor_msgs::LaserScan laser_scan);
+
+            void initializeCustomizedCostmap();
 
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
@@ -92,10 +94,10 @@ namespace local_planner_wrapper
             ros::Publisher g_plan_pub_, l_plan_pub_;
 
             // Visualize the update costmap
-            ros::Publisher updated_costmap_pub_;
+            //ros::Publisher updated_costmap_pub_;
 
             // Subscribe to the costmap
-            ros::Subscriber costmap_sub_;
+            //ros::Subscriber costmap_sub_;
 
 
             // Publisher to the stage_sim_bot
@@ -103,7 +105,7 @@ namespace local_planner_wrapper
 
 
             // Subscribe to the costmap update
-            ros::Subscriber costmap_update_sub_;
+            //ros::Subscriber costmap_update_sub_;
 
 
             // Subscribe to laser scan topic
@@ -112,7 +114,11 @@ namespace local_planner_wrapper
             // Publisher for customized costmap
             ros::Publisher customized_costmap_pub_;
 
-            ros::Publisher marker_pub_; // to_delete
+            ros::Publisher marker_array_pub_; // to_delete
+
+            bool is_customized_costmap_initialized_;
+
+
 
 
             // Our costmap ros interface
@@ -122,10 +128,12 @@ namespace local_planner_wrapper
             costmap_2d::Costmap2D* costmap_;
 
             // The updated costmap
-            nav_msgs::OccupancyGrid filtereded_costmap_;
+            //nav_msgs::OccupancyGrid filtereded_costmap_;
 
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
+
+            visualization_msgs::MarkerArray marker_array_;
 
             // Customized costmap
             //costmap_2d::Costmap2D customized_costmap_2d_; // to_delete

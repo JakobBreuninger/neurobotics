@@ -13,7 +13,6 @@ namespace local_planner_wrapper
     LocalPlannerWrapper::LocalPlannerWrapper() : initialized_(false),
                                                  blp_loader_("nav_core", "nav_core::BaseLocalPlanner")
     {
-
     }
 
     // Desctructor
@@ -39,11 +38,11 @@ namespace local_planner_wrapper
             ros::NodeHandle private_nh("~/" + name);
             g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
-            updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
-            costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
-                                                &LocalPlannerWrapper::filterCostmap, this);
-            costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
-                                                &LocalPlannerWrapper::updateCostmap, this);
+            //updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
+            //costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
+                                                //&LocalPlannerWrapper::filterCostmap, this);
+            //costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
+                                                //&LocalPlannerWrapper::updateCostmap, this);
 
             laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &LocalPlannerWrapper::getLaserScanPoints, this);
 
@@ -52,34 +51,11 @@ namespace local_planner_wrapper
 
             customized_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("customized_costmap", 1);
 
-            marker_pub_ = private_nh.advertise<visualization_msgs::Marker>("visualization_marker", 1); // to_delete
-
-            customized_costmap_ = nav_msgs::OccupancyGrid();
-
-            customized_costmap_.header.frame_id = "/base_footprint";
-            customized_costmap_.header.stamp = ros::Time::now();
-
-            customized_costmap_.info.height = 80;
-            customized_costmap_.info.width = 80;
-            customized_costmap_.info.resolution = 0.05;
-            customized_costmap_.info.origin.position.x = -1.95;
-            customized_costmap_.info.origin.position.y = -1.95;
-            customized_costmap_.info.origin.position.z = 0.0;
-            customized_costmap_.info.origin.orientation.x = 0.0;
-            customized_costmap_.info.origin.orientation.y = 0.0;
-            customized_costmap_.info.origin.orientation.z = 0.0;
-            customized_costmap_.info.origin.orientation.w = 1.0;
-
-            std::vector<int8_t> data(6400,50);
-            customized_costmap_.data = data;
-
-            //customized_costmap_2d_ = Costmap2D(80,80,0.05,-1.95,-1.95); // to_delete
-
-
+            marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
             // --- Just for testing: ---
             // initialization of cost map as only updates are received
-            filtereded_costmap_ = nav_msgs::OccupancyGrid();
+            /*filtereded_costmap_ = nav_msgs::OccupancyGrid();
 
             filtereded_costmap_.header.frame_id = "/base_footprint";
             filtereded_costmap_.header.stamp = ros::Time::now();
@@ -95,11 +71,13 @@ namespace local_planner_wrapper
             filtereded_costmap_.info.origin.orientation.z = 0.0;
             filtereded_costmap_.info.origin.orientation.w = 1.0;
 
-            filtereded_costmap_.data = data;
+            std::vector<int8_t> data(6400,0);
+            filtereded_costmap_.data = data;*/
 
 
             // -------------------------------------
 
+            is_customized_costmap_initialized_ = false;
 
             // Setup tf
             tf_ = tf;
@@ -246,7 +224,7 @@ namespace local_planner_wrapper
     // Callback function for the subscriber to the local costmap update
     // costmap_update:      this is the costmap message
     // Return:              nothing
-    void LocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
+    /*void LocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
 
         //std::cout << "Costmap update received -> update costmap!!!" << std::endl;
 
@@ -264,24 +242,24 @@ namespace local_planner_wrapper
 
         filterCostmap(filtereded_costmap_);
 
-    }
+    }*/
 
 
     // Get index for costmap update
     // x:
     // y:
     // Return:
-    int LocalPlannerWrapper::getIndex(int x, int y)
+    /*int LocalPlannerWrapper::getIndex(int x, int y)
     {
         int costmap_width = filtereded_costmap_.info.width;
         return y * costmap_width + x;
-    }
+    }*/
 
 
     // Callback function for the subscriber to the local costmap
     // costmap:             this is the costmap message
     // Return:              nothing
-    void LocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
+    /*void LocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
     {
         filtereded_costmap_ = costmap;
 
@@ -332,6 +310,33 @@ namespace local_planner_wrapper
         }
 
         updated_costmap_pub_.publish(filtereded_costmap_);
+    }*/
+
+    void LocalPlannerWrapper::initializeCustomizedCostmap()
+    {
+        customized_costmap_ = nav_msgs::OccupancyGrid();
+
+        // header
+        customized_costmap_.header.frame_id = "/base_footprint";
+        customized_costmap_.header.stamp = ros::Time::now();
+        customized_costmap_.header.seq = 0;
+
+        // info
+        customized_costmap_.info.width = costmap_->getSizeInCellsX(); // e.g. 80
+        customized_costmap_.info.height = costmap_->getSizeInCellsY(); // e.g. 80
+        customized_costmap_.info.resolution = costmap_->getResolution(); // e.g. 0.05
+        customized_costmap_.info.origin.position.x = -costmap_->getSizeInMetersX()/2.0; // e.g.-1.95
+        customized_costmap_.info.origin.position.y = -costmap_->getSizeInMetersY()/2.0; // e.g.-1.95
+        customized_costmap_.info.origin.position.z = 0.0;
+        customized_costmap_.info.origin.orientation.x = 0.0;
+        customized_costmap_.info.origin.orientation.y = 0.0;
+        customized_costmap_.info.origin.orientation.z = 0.0;
+        customized_costmap_.info.origin.orientation.w = 1.0;
+        // customized_costmap_.info.map_load_time important?
+
+        // data
+        std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
+        customized_costmap_.data = data;
     }
 
     // Callback function for the subscriber to the laser scan
@@ -339,102 +344,123 @@ namespace local_planner_wrapper
     // Return:              nothing
     void LocalPlannerWrapper::getLaserScanPoints(sensor_msgs::LaserScan laser_scan)
     {
-        // clear costmap
-        std::vector<int8_t> data(6400,50);
-        customized_costmap_.data = data;
+        if (!is_customized_costmap_initialized_) // initialize costmap
+        {
+            initializeCustomizedCostmap();
+            is_customized_costmap_initialized_ = true;
+        } else { // clear costmap -> set all pixel of costmap to same value e.g. 50
+            std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
+            customized_costmap_.data = data;
+        }
 
+        // get source frame and target frame of laser scan points
         std::string laser_scan_source_frame = laser_scan.header.frame_id;
         std::string laser_scan_target_frame = customized_costmap_.header.frame_id;
 
-        std::cout << "Source frame: " << laser_scan_source_frame << std::endl;
-        std::cout << "Target frame: " << laser_scan_target_frame << std::endl;
-
-        ros::Time laser_scan_source_stamp = laser_scan.header.stamp; // stamp of first laser point in range
-
-        ros::Time customized_costmap_stamp = laser_scan.header.stamp; // TODO
+        ros::Time laser_scan_stamp = laser_scan.header.stamp; // stamp of first laser point in range
+        // std::cout << "Laser scan stamp: " << laser_scan_stamp << std::endl;
+        // std::cout << "Time increment: " << laser_scan.time_increment << std::endl;
+        // std::cout << "Scan time: " << laser_scan.scan_time << std::endl;
+        ros::Time customized_costmap_stamp = laser_scan_stamp;
 
         tf::StampedTransform transform; // transformation between robot base frame and frame of laser scan
+        try
+        {
+            //tf_->lookupTransform(laser_scan_target_frame, customized_costmap_stamp, laser_scan_source_frame, laser_scan_stamp, "/map", transform);
+            tf_->lookupTransform(laser_scan_target_frame, laser_scan_source_frame, laser_scan_stamp, transform);
+        }
+        catch (tf::TransformException ex)
+        {
+            ROS_ERROR("%s",ex.what());
+        }
+
         double x_position_laser_scan_frame; // x position of laser scan point in frame of laser scan
         double y_position_laser_scan_frame; // y position of laser scan point in frame of laser scan
         double x_position_robot_base_frame; // x position of laser scan point in robot base frame
         double y_position_robot_base_frame; // y position of laser scan point in robot base frame
 
+        marker_array_.markers.clear();
+
+        // std::cout << "Laser scan RANGE MIN: " << laser_scan.range_min << std::endl;
+        // std::cout << "Laser scan RANGE Max: " << laser_scan.range_max << std::endl;
+
         for(int i = 0; i < laser_scan.ranges.size(); i++)
         {
-            try
+            if ((laser_scan.ranges.at(i) > laser_scan.range_min) && (laser_scan.ranges.at(i) < laser_scan.range_max))
             {
-                tf_->lookupTransform(laser_scan_target_frame, customized_costmap_stamp, laser_scan_source_frame, laser_scan_source_stamp, "/map", transform);
+
+                //laser_scan_source_stamp = laser_scan_source_stamp + ros::Duration(laser_scan.scan_time); // as robot base is moving laser_scan_source_stamp is different for every laser scan point
+
+                // std::cout << "range at position " << i << " is: " << laser_scan.ranges.at(i)  << std::endl;
+
+                // get x and y coordinates of laser scan point in frame of laser scan, z coordinate is ignored as we are working with a 2D costmap
+                x_position_laser_scan_frame = laser_scan.ranges.at(i) * cos(laser_scan.angle_min + i*laser_scan.angle_increment);
+                y_position_laser_scan_frame = laser_scan.ranges.at(i) * sin(laser_scan.angle_min + i*laser_scan.angle_increment);
+
+                // translation
+                x_position_robot_base_frame = x_position_laser_scan_frame + transform.getOrigin().getX();
+                y_position_robot_base_frame = y_position_laser_scan_frame + transform.getOrigin().getY();
+                // rotation
+                double roll, pitch, yaw;
+                transform.getBasis().getRPY(roll, pitch, yaw);
+                double x_temp = x_position_robot_base_frame;
+                double y_temp = y_position_robot_base_frame;
+                x_position_robot_base_frame = cos(yaw)*x_temp - sin(yaw)*y_temp;
+                y_position_robot_base_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
+
+                // visualization
+                visualization_msgs::Marker marker;
+                marker.header.frame_id = laser_scan_target_frame;
+                marker.header.stamp = customized_costmap_stamp;
+
+                marker.id = i;
+
+                marker.type = visualization_msgs::Marker::SPHERE;
+                marker.action = visualization_msgs::Marker::ADD;
+
+                marker.pose.position.x = x_position_robot_base_frame;
+                marker.pose.position.y = y_position_robot_base_frame;
+                marker.pose.position.z = 0;
+                marker.pose.orientation.x = 0.0;
+                marker.pose.orientation.y = 0.0;
+                marker.pose.orientation.z = 0.0;
+                marker.pose.orientation.w = 1.0;
+
+                marker.scale.x = 0.05;
+                marker.scale.y = 0.05;
+                marker.scale.z = 0.05;
+
+                marker.color.r = 0.0f;
+                marker.color.g = 1.0f;
+                marker.color.b = 0.0f;
+                marker.color.a = 1.0;
+
+                marker_array_.markers.push_back(marker);
+
+                // Transformtion to costmap coordinates
+                int x, y;
+
+                x = round(((x_position_robot_base_frame - customized_costmap_.info.origin.position.x)/costmap_->getSizeInMetersX())*customized_costmap_.info.width);
+                y = round(((y_position_robot_base_frame - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height);
+
+                if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
+                {
+                    customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
+                }
             }
-            catch (tf::TransformException ex)
-            {
-                ROS_ERROR("%s",ex.what());
-            }
-
-            // translation
-            x_position_laser_scan_frame = laser_scan.ranges.at(i) * cos(laser_scan.angle_min + i*laser_scan.angle_increment) + transform.getOrigin().getX();
-            y_position_laser_scan_frame = laser_scan.ranges.at(i) * cos(laser_scan.angle_min + i*laser_scan.angle_increment) + transform.getOrigin().getY();
-            // rotation
-            double roll, pitch, yaw;
-            transform.getBasis().getRPY(roll, pitch, yaw);
-
-            x_position_robot_base_frame = cos(yaw)*x_position_laser_scan_frame - sin(yaw)*y_position_laser_scan_frame;
-            y_position_robot_base_frame = sin(yaw)*x_position_laser_scan_frame + cos(yaw)*y_position_laser_scan_frame;
-
-            // Transformtion to costmap coordinates
-            unsigned int x, y;
-
-            visualization_msgs::Marker marker;
-            marker.header.frame_id = laser_scan_target_frame;
-            marker.header.stamp = customized_costmap_stamp;
-
-            marker.id = 0;
-
-            marker.type = visualization_msgs::Marker::SPHERE;
-
-            marker.action = visualization_msgs::Marker::ADD;
-
-            marker.pose.position.x = x_position_robot_base_frame;
-            marker.pose.position.y = y_position_robot_base_frame;
-            marker.pose.position.z = 0;
-            marker.pose.orientation.x = 0.0;
-            marker.pose.orientation.y = 0.0;
-            marker.pose.orientation.z = 0.0;
-            marker.pose.orientation.w = 1.0;
-
-            marker.scale.x = 0.1;
-            marker.scale.y = 0.1;
-            marker.scale.z = 0.1;
-
-            marker.color.r = 0.0f;
-            marker.color.g = 1.0f;
-            marker.color.b = 0.0f;
-            marker.color.a = 1.0;
-
-            marker.lifetime = ros::Duration();
-
-            marker_pub_.publish(marker);
-
-            if (costmap_->worldToMap(x_position_robot_base_frame, y_position_robot_base_frame, x, y))
-            {
-                customized_costmap_.data[x + y*customized_costmap_.info.width] = 100;
-            }
-
-
-            //laser_scan_source_stamp = laser_scan_source_stamp + ros::Duration(laser_scan.scan_time); // as robot base is moving laser_scan_source_stamp is different for every laser scan point
         }
+
+        //std::cout << "Marker array size:" << marker_array_.markers.size() << std::endl;
+        marker_array_pub_.publish(marker_array_);
 
         customized_costmap_.header.stamp = customized_costmap_stamp;
         customized_costmap_pub_.publish(customized_costmap_);
 
+        customized_costmap_.header.seq = customized_costmap_.header.seq + 1;
+
         //customized_costmap_.header.stamp = laser_scan_source_stamp + ros::Time::fromSec(laser_scan.ranges.size()*laser_scan.scan_time);
 
-        /*std::cout << "Size: " << laser_scan.ranges.size() << std::endl;
 
-        std::cout << "Min: " << laser_scan.angle_min << std::endl;
-        std::cout << "Max: " << laser_scan.angle_max << std::endl;
-        std::cout << "Increment: " << laser_scan.angle_increment << std::endl;
-
-        std::cout << "Size should be: " << (laser_scan.angle_max - laser_scan.angle_min)/laser_scan.angle_increment << std::endl;*/
     }
 
 };
