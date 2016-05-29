@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_WRAPPER_LOCAL_PLANNER_WRAPPER_H_
 
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <angles/angles.h>
 #include <nav_msgs/Odometry.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -87,6 +88,8 @@ namespace local_planner_wrapper
 
             void initializeCustomizedCostmap();
 
+            void addMarkerToArray(double x, double y, std::string frame, ros::Time stamp);
+
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
 
@@ -118,7 +121,7 @@ namespace local_planner_wrapper
 
             bool is_customized_costmap_initialized_;
 
-
+            tf::TransformBroadcaster tf_broadcaster_;
 
 
             // Our costmap ros interface

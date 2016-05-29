@@ -8,6 +8,7 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /LaserScan (kinect)1
+        - /Map1
         - /Local Planning1
         - /Local Planning1/Costmap1
         - /Global Planning1
@@ -254,7 +255,7 @@ Visualization Manager:
       Queue Size: 10
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.03
+      Size (m): 0.02
       Style: Squares
       Topic: /scan
       Unreliable: false
@@ -351,15 +352,15 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
-    - Alpha: 0.7
+    - Alpha: 0.3
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: true
+      Enabled: false
       Name: Map
       Topic: /map
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Group
       Displays:
         - Alpha: 0.7
@@ -514,7 +515,7 @@ Visualization Manager:
       Topic: /move_base/NavfnROS/plan
       Unreliable: false
       Value: false
-    - Alpha: 0.7
+    - Alpha: 1
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
@@ -524,13 +525,13 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: true
+      Enabled: false
       Marker Topic: /move_base/LocalPlannerWrapper/visualization_marker_array
       Name: MarkerArray
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -550,7 +551,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: -0.0249993
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
@@ -559,11 +560,11 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 99.9166
+      Scale: 156.098
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 0.790967
-      Y: 1.98833
+      X: -1.10772
+      Y: -0.309676
     Saved: ~
 Window Geometry:
   Displays:
