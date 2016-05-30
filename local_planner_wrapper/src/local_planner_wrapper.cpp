@@ -46,6 +46,7 @@ namespace local_planner_wrapper
 
             laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &LocalPlannerWrapper::getLaserScanPoints, this);
 
+            global_plan_portion_sub_ = private_nh.subscribe("/move_base/TrajectoryPlannerROS/global_plan", 1000, &LocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
 
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
@@ -312,6 +313,11 @@ namespace local_planner_wrapper
         updated_costmap_pub_.publish(filtereded_costmap_);
     }*/
 
+    void LocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
+    {
+        global_plan_portion_ = global_plan_portion.poses;
+    }
+
     void LocalPlannerWrapper::initializeCustomizedCostmap()
     {
         customized_costmap_ = nav_msgs::OccupancyGrid();
@@ -462,7 +468,7 @@ namespace local_planner_wrapper
 
         // --- 3. ADD GLOBAL PATH AS WHITE PIXEL ---
         // Transform the global plan into costmap coordinates
-        geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
+        /*geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
         geometry_msgs::PoseStamped pose_robot_base_frame; // pose given in global frame of the local cost map
 
         //for(std::vector<geometry_msgs::PoseStamped>::reverse_iterator it = global_plan_.rbegin(); it != global_plan_.rend(); it++)
@@ -486,6 +492,37 @@ namespace local_planner_wrapper
             int x, y;
             x = round(((pose_robot_base_frame.pose.position.x - customized_costmap_.info.origin.position.x)/costmap_->getSizeInMetersX())*customized_costmap_.info.width-0.5);
             y = round(((pose_robot_base_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
+            if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
+            {
+                customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
+            }
+        }*/
+
+        // --- ALTERNATIVE - TAKE RELEVANT PORTION OF GLOBAL PATH ---
+        // Transformation of global path portion to frame of costmap
+        geometry_msgs::PoseStamped pose_source_frame; // pose given in source frame of global plan portion which is by default "odom"
+        geometry_msgs::PoseStamped pose_target_frame; // pose given in global frame of the local cost map
+
+        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_portion_.begin(); it != global_plan_portion_.end(); it++)
+        {
+            // Transform pose from source frame of global plan portion to global frame of local cost map
+            pose_source_frame = *it;
+            try
+            {
+                pose_source_frame.header.stamp = customized_costmap_.header.stamp;
+                tf_->waitForTransform(customized_costmap_.header.frame_id, pose_source_frame.header.frame_id,
+                                      customized_costmap_.header.stamp, ros::Duration(0.2));
+                tf_->transformPose(customized_costmap_.header.frame_id, pose_source_frame, pose_target_frame);
+            }
+            catch (tf::TransformException ex)
+            {
+                ROS_ERROR("%s",ex.what());
+            }
+
+            // transformtion to costmap coordinates
+            int x, y;
+            x = round(((pose_target_frame.pose.position.x - customized_costmap_.info.origin.position.x)/costmap_->getSizeInMetersX())*customized_costmap_.info.width-0.5);
+            y = round(((pose_target_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
             if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
             {
                 customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
