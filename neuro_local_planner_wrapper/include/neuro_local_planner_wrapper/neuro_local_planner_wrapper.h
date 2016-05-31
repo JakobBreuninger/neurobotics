@@ -2,6 +2,7 @@
 #define NEURO_LOCAL_PLANNER_WRAPPER_NEURO_LOCAL_PLANNER_WRAPPER_H_
 
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <angles/angles.h>
 #include <nav_msgs/Odometry.h>
 #include <costmap_2d/costmap_2d_ros.h>
@@ -13,6 +14,13 @@
 #include <std_msgs/Bool.h>
 #include <pluginlib/class_loader.h>
 
+#include <nav_msgs/OccupancyGrid.h>
+#include <map_msgs/OccupancyGridUpdate.h>
+#include <sensor_msgs/LaserScan.h>
+
+#include <visualization_msgs/MarkerArray.h> // to_delete
+
+#include <tf/tf.h>
 
 // We use namespaces to keep things seperate under all the planners
 namespace neuro_local_planner_wrapper
@@ -57,25 +65,75 @@ namespace neuro_local_planner_wrapper
 
         private:
 
+            // Get index for costmap update
+            // x:
+            // y:
+            // Return:
+            //nt getIndex(int x, int y);
+
+            // Callback function for the subscriber to the local costmap update
+            // costmap_update:      this is the costmap message
+            // Return:              nothing
+            //void updateCostmap(map_msgs::OccupancyGridUpdate costmap_update);
+
             // Callback function for the subscriber to the local costmap
             // costmap:             this is the costmap message
             // Return:              nothing
-            void updateCostmap(nav_msgs::OccupancyGrid costmap);
+            //void filterCostmap(nav_msgs::OccupancyGrid costmap);
+
+            // Callback function for the subscriber to portion of global plan
+            // global_path_portion: this is the relevant portion of the global path
+            // Return:              nothing
+            void setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion);
+
+            // Callback function for the subscriber to laser scan
+            // laser_scan:          this is the laser scan message
+            // Return:              nothing
+            void getLaserScanPoints(sensor_msgs::LaserScan laser_scan);
+
+            void initializeCustomizedCostmap();
+
+            void addMarkerToArray(double x, double y, std::string frame, ros::Time stamp);
 
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
 
             // For visualisation, publishers of global and local plan
-            ros::Publisher g_plan_pub_, l_plan_pub_;
+            ros::Publisher g_plan_pub_, l_plan_pub_; // TODO: never used right?
 
             // Visualize the update costmap
-            ros::Publisher updated_costmap_pub_;
+            //ros::Publisher updated_costmap_pub_;
 
             // Subscribe to the costmap
-            ros::Subscriber costmap_sub_;
+            //ros::Subscriber costmap_sub_;
+
 
             // Publisher to the stage_sim_bot
             ros::Publisher state_pub_;
+
+
+            // Subscribe to the costmap update
+            //ros::Subscriber costmap_update_sub_;
+
+            // Subscribe to global plan of TrajectoryPlannerROS which is a portion of the global plan that the local planner is currently attempting to follow
+            ros::Subscriber global_plan_portion_sub_;
+
+            std::vector<geometry_msgs::PoseStamped> global_plan_portion_;
+
+            // Subscribe to laser scan topic
+            ros::Subscriber laser_scan_sub_;
+
+            // Publisher for customized costmap
+            ros::Publisher customized_costmap_pub_;
+
+            ros::Publisher marker_array_pub_; // to_delete
+
+            ros::Publisher constcutive_costmaps_pub_;
+
+            bool is_customized_costmap_initialized_;
+
+            tf::TransformBroadcaster tf_broadcaster_;
+
 
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;
@@ -84,7 +142,18 @@ namespace neuro_local_planner_wrapper
             costmap_2d::Costmap2D* costmap_;
 
             // The updated costmap
-            nav_msgs::OccupancyGrid updated_costmap_;
+            //nav_msgs::OccupancyGrid filtereded_costmap_;
+
+            // Customized costmap as state representation of the robot base
+            nav_msgs::OccupancyGrid customized_costmap_;
+
+            // Four consecutive costmaps stacked together in one vector
+            nav_msgs::OccupancyGrid constcutive_costmaps_;
+
+            visualization_msgs::MarkerArray marker_array_;
+
+            // Customized costmap
+            //costmap_2d::Costmap2D customized_costmap_2d_; // to_delete
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
