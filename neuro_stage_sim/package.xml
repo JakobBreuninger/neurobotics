@@ -11,10 +11,21 @@
   <license>BSD</license>
 
   <buildtool_depend>catkin</buildtool_depend>
+    <build_depend>nav_core</build_depend>
+    <build_depend>pluginlib</build_depend>
+    <build_depend>roscpp</build_depend>
+
   <run_depend>stage_ros</run_depend>
   <run_depend>navigation</run_depend>
   <run_depend>turtlebot_bringup</run_depend>
   <run_depend>turtlebot_navigation</run_depend>
   <run_depend>yocs_virtual_sensor</run_depend>
   <run_depend>yocs_velocity_smoother</run_depend>
+    <run_depend>nav_core</run_depend>
+    <run_depend>pluginlib</run_depend>
+    <run_depend>roscpp</run_depend>
+
+  <export>
+    <nav_core plugin="${prefix}/recovery_plugin.xml" />
+  </export>
 </package>

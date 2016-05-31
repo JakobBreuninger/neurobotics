@@ -43,7 +43,7 @@ Visualization Manager:
       Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.03
         Value: Lines
@@ -56,188 +56,22 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 100
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
-      Enabled: true
+      Enabled: false
       Links:
         All Links Enabled: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_depth_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_depth_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_rgb_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_rgb_optical_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        caster_back_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        caster_front_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        cliff_sensor_front_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cliff_sensor_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cliff_sensor_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        gyro_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        mount_asus_xtion_pro_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        plate_bottom_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        plate_middle_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        plate_top_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_0_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_4_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_bottom_5_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_kinect_0_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_kinect_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_middle_0_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_middle_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_middle_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_middle_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_top_0_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_top_1_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_top_2_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        pole_top_3_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
       Update Interval: 0
-      Value: true
+      Value: false
       Visual Enabled: true
     - Class: rviz/TF
       Enabled: false
@@ -265,7 +99,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 1
@@ -282,7 +116,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -377,27 +211,27 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: false
-      Enabled: false
+      Enabled: true
       Name: Map
       Topic: /map
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/Group
       Displays:
         - Alpha: 0.7
           Class: rviz/Map
           Color Scheme: map
           Draw Behind: false
-          Enabled: false
+          Enabled: true
           Name: Costmap
-          Topic: /move_base/local_costmap/costmap
+          Topic: /move_base/NeuroLocalPlannerWrapper/customized_costmap
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
           Color: 0; 12; 255
-          Enabled: true
+          Enabled: false
           Line Style: Lines
           Line Width: 0.03
           Name: Planner
@@ -407,7 +241,7 @@ Visualization Manager:
             Z: 0
           Topic: /move_base/DWAPlannerROS/local_plan
           Unreliable: false
-          Value: true
+          Value: false
         - Alpha: 0.5
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -485,7 +319,7 @@ Visualization Manager:
           Buffer Length: 1
           Class: rviz/Path
           Color: 255; 0; 0
-          Enabled: true
+          Enabled: false
           Line Style: Lines
           Line Width: 0.03
           Name: Planner
@@ -495,7 +329,7 @@ Visualization Manager:
             Z: 0
           Topic: /move_base/DWAPlannerROS/global_plan
           Unreliable: false
-          Value: true
+          Value: false
       Enabled: true
       Name: Global Planning
     - Alpha: 1
@@ -503,7 +337,7 @@ Visualization Manager:
       Axes Radius: 0.1
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.2
       Head Radius: 0.1
       Name: Pose (move_base)
@@ -512,15 +346,15 @@ Visualization Manager:
       Shape: Arrow
       Topic: /move_base/current_goal
       Unreliable: false
-      Value: true
+      Value: false
     - Arrow Length: 0.2
       Class: rviz/PoseArray
       Color: 0; 192; 0
-      Enabled: false
+      Enabled: true
       Name: ParticleCloud
       Topic: /particlecloud
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -556,7 +390,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: odom
     Frame Rate: 30
   Name: root
   Tools:

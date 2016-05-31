@@ -1,23 +1,23 @@
-#include <local_planner_wrapper/local_planner_wrapper.h>
+#include <neuro_local_planner_wrapper/neuro_local_planner_wrapper.h>
 #include <pluginlib/class_list_macros.h>
 
 #include <math.h>
 
 // Register this planner as a BaseLocalPlanner plugin
-PLUGINLIB_EXPORT_CLASS(local_planner_wrapper::LocalPlannerWrapper, nav_core::BaseLocalPlanner)
+PLUGINLIB_EXPORT_CLASS(neuro_local_planner_wrapper::NeuroLocalPlannerWrapper, nav_core::BaseLocalPlanner)
 
-namespace local_planner_wrapper
+namespace neuro_local_planner_wrapper
 {
     // Constructor
     // --> Part of interface
-    LocalPlannerWrapper::LocalPlannerWrapper() : initialized_(false),
+    NeuroLocalPlannerWrapper::NeuroLocalPlannerWrapper() : initialized_(false),
                                                  blp_loader_("nav_core", "nav_core::BaseLocalPlanner")
     {
     }
 
-    // Desctructor
+    // Destructor
     // --> Part of interface
-    LocalPlannerWrapper::~LocalPlannerWrapper()
+    NeuroLocalPlannerWrapper::~NeuroLocalPlannerWrapper()
     {
         tc_.reset();
     }
@@ -28,7 +28,7 @@ namespace local_planner_wrapper
     // tf:                  this will tell the planner the robots location (i think)
     // costmap_ros:         the costmap
     // Return:              nothing
-    void LocalPlannerWrapper::initialize(std::string name, tf::TransformListener* tf,
+    void NeuroLocalPlannerWrapper::initialize(std::string name, tf::TransformListener* tf,
                                          costmap_2d::Costmap2DROS* costmap_ros)
     {
         // If we are not ininialized do so
@@ -38,15 +38,16 @@ namespace local_planner_wrapper
             ros::NodeHandle private_nh("~/" + name);
             g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
+
             //updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
             //costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
                                                 //&LocalPlannerWrapper::filterCostmap, this);
             //costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
                                                 //&LocalPlannerWrapper::updateCostmap, this);
 
-            laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &LocalPlannerWrapper::getLaserScanPoints, this);
+            laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &NeuroLocalPlannerWrapper::getLaserScanPoints, this);
 
-            global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &LocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
+            global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
 
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
@@ -126,7 +127,7 @@ namespace local_planner_wrapper
     // orig_global_plan:    this is the global plan we're supposed to follow (a vector of positions forms the
     //                      line)
     // Return:              True if plan was succesfully received...
-    bool LocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
+    bool NeuroLocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
     {
 
         //std::cout << "DRIN" << std::endl;
@@ -150,9 +151,10 @@ namespace local_planner_wrapper
         // This code is copied from the dwa_planner
         if (existing_plugin_)
         {
-            if(tc_->setPlan(orig_global_plan))
+            if (!tc_->setPlan(orig_global_plan))
             {
-                ROS_ERROR("Successfully set plan!!!");
+                ROS_ERROR("Failed to set plan for existing plugin");
+                return false;
             }
         }
         return true;
@@ -162,14 +164,14 @@ namespace local_planner_wrapper
     // --> Part of interface
     // cmd_vel:             fill this vector with our velocity commands (the actual output we're producing)
     // Return:              True if we didn't fail
-    bool LocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
+    bool NeuroLocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
         // Should we use the network as a planner or the dwa planner?
         if (!existing_plugin_)
         {
             // Lets drive in circles
-            cmd_vel.angular.z = 0.1;
-            cmd_vel.linear.x = 0.1;
+            cmd_vel.angular.z = 0.0;
+            cmd_vel.linear.x = 0.5;
             return true;
         }
         // Use the existing local planner plugin
@@ -194,7 +196,7 @@ namespace local_planner_wrapper
     // Tell if goal was reached
     // --> Part of interface
     // Return:              True if goal pose was reached
-    bool LocalPlannerWrapper::isGoalReached()
+    bool NeuroLocalPlannerWrapper::isGoalReached()
     {
         // Get current position
         costmap_ros_->getRobotPose(current_pose_);
@@ -227,7 +229,7 @@ namespace local_planner_wrapper
     // Callback function for the subscriber to the local costmap update
     // costmap_update:      this is the costmap message
     // Return:              nothing
-    /*void LocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
+    /*void NeuroLocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
 
         //std::cout << "Costmap update received -> update costmap!!!" << std::endl;
 
@@ -252,7 +254,7 @@ namespace local_planner_wrapper
     // x:
     // y:
     // Return:
-    /*int LocalPlannerWrapper::getIndex(int x, int y)
+    /*int NeuroLocalPlannerWrapper::getIndex(int x, int y)
     {
         int costmap_width = filtereded_costmap_.info.width;
         return y * costmap_width + x;
@@ -262,7 +264,8 @@ namespace local_planner_wrapper
     // Callback function for the subscriber to the local costmap
     // costmap:             this is the costmap message
     // Return:              nothing
-    /*void LocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
+
+    /*void NeuroLocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
     {
         filtereded_costmap_ = costmap;
 
@@ -315,12 +318,12 @@ namespace local_planner_wrapper
         updated_costmap_pub_.publish(filtereded_costmap_);
     }*/
 
-    void LocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
+    void NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
     {
         global_plan_portion_ = global_plan_portion.poses;
     }
 
-    void LocalPlannerWrapper::initializeCustomizedCostmap()
+    void NeuroLocalPlannerWrapper::initializeCustomizedCostmap()
     {
         customized_costmap_ = nav_msgs::OccupancyGrid();
 
@@ -347,7 +350,7 @@ namespace local_planner_wrapper
         customized_costmap_.data = data;
     }
 
-    void LocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
+    void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
 
         visualization_msgs::Marker marker;
 
@@ -382,7 +385,7 @@ namespace local_planner_wrapper
     // Callback function for the subscriber to the laser scan
     // laser_scan:          this is the laser scan message
     // Return:              nothing
-    void LocalPlannerWrapper::getLaserScanPoints(sensor_msgs::LaserScan laser_scan)
+    void NeuroLocalPlannerWrapper::getLaserScanPoints(sensor_msgs::LaserScan laser_scan)
     {
         /*tf::Transform transform;
         transform.setOrigin(current_pose_.getOrigin());
@@ -568,5 +571,4 @@ namespace local_planner_wrapper
             constcutive_costmaps_.data.insert(constcutive_costmaps_.data.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
         }
     }
-
 };

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(local_planner_wrapper)
+project(neuro_local_planner_wrapper)
 
 find_package(catkin REQUIRED COMPONENTS
   base_local_planner
@@ -42,10 +42,10 @@ include_directories(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES local_planner_wrapper
+  LIBRARIES neuro_local_planner_wrapper
   CATKIN_DEPENDS base_local_planner costmap_2d nav_core nav_msgs pluginlib roscpp std_msgs tf
   DEPENDS system_lib
 )
 
-add_library(local_planner_wrapper src/local_planner_wrapper.cpp)
-target_link_libraries(local_planner_wrapper ${catkin_LIBRARIES})
+add_library(neuro_local_planner_wrapper src/neuro_local_planner_wrapper.cpp)
+target_link_libraries(neuro_local_planner_wrapper ${catkin_LIBRARIES})

@@ -1,0 +1,8 @@
+<library path="lib/libneuro_fake_recovery">
+    <class name="neuro_fake_recovery/NeuroFakeRecovery" type="neuro_fake_recovery::NeuroFakeRecovery"
+           base_class_type="nav_core::RecoveryBehavior">
+        <description>
+            A recovery behavior that results in the robot being beamed to a new location for learning.
+        </description>
+    </class>
+</library>
