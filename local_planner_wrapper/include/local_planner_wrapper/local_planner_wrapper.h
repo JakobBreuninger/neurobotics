@@ -128,6 +128,8 @@ namespace local_planner_wrapper
 
             ros::Publisher marker_array_pub_; // to_delete
 
+            ros::Publisher constcutive_costmaps_pub_;
+
             bool is_customized_costmap_initialized_;
 
             tf::TransformBroadcaster tf_broadcaster_;
@@ -144,6 +146,9 @@ namespace local_planner_wrapper
 
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
+
+            // Four consecutive costmaps stacked together in one vector
+            nav_msgs::OccupancyGrid constcutive_costmaps_;
 
             visualization_msgs::MarkerArray marker_array_;
 

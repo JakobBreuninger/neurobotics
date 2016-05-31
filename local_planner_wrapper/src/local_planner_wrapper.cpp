@@ -46,11 +46,13 @@ namespace local_planner_wrapper
 
             laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &LocalPlannerWrapper::getLaserScanPoints, this);
 
-            global_plan_portion_sub_ = private_nh.subscribe("/move_base/TrajectoryPlannerROS/global_plan", 1000, &LocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
+            global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &LocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
 
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
             customized_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("customized_costmap", 1);
+
+            constcutive_costmaps_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("constcutive_costmaps", 1);
 
             marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
@@ -92,7 +94,7 @@ namespace local_planner_wrapper
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
-            std::string local_planner = "base_local_planner/TrajectoryPlannerROS";
+            std::string local_planner = "dwa_local_planner/DWAPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
             if (existing_plugin_)
@@ -341,7 +343,7 @@ namespace local_planner_wrapper
         // customized_costmap_.info.map_load_time important?
 
         // data
-        std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
+        std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
         customized_costmap_.data = data;
     }
 
@@ -392,8 +394,8 @@ namespace local_planner_wrapper
         {
             initializeCustomizedCostmap();
             is_customized_costmap_initialized_ = true;
-        } else { // clear costmap -> set all pixel of costmap to same value e.g. 50
-            std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
+        } else { // clear costmap -> set all pixel of costmap to same value e.g. 70
+            std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
             customized_costmap_.data = data;
         }
 
@@ -468,8 +470,11 @@ namespace local_planner_wrapper
 
         // --- 3. ADD GLOBAL PATH AS WHITE PIXEL ---
         // Transform the global plan into costmap coordinates
-        /*geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
+        geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
         geometry_msgs::PoseStamped pose_robot_base_frame; // pose given in global frame of the local cost map
+
+        std::vector<geometry_msgs::Point> global_plan_map_coordinates;
+        geometry_msgs::Point a_global_plan_map_coordinate;
 
         //for(std::vector<geometry_msgs::PoseStamped>::reverse_iterator it = global_plan_.rbegin(); it != global_plan_.rend(); it++)
         for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_.begin(); it != global_plan_.end(); it++)
@@ -494,14 +499,27 @@ namespace local_planner_wrapper
             y = round(((pose_robot_base_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
             if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
             {
-                customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
+                a_global_plan_map_coordinate.x = x;
+                a_global_plan_map_coordinate.y = y;
+
+                global_plan_map_coordinates.push_back(a_global_plan_map_coordinate);
             }
-        }*/
+        }
+
+        int total_plan_pixel_number = global_plan_map_coordinates.size();
+        int counter = 0;
+        for(std::vector<geometry_msgs::Point>::iterator it = global_plan_map_coordinates.begin(); it != global_plan_map_coordinates.end(); it++) {
+            a_global_plan_map_coordinate = *it;
+            customized_costmap_.data[a_global_plan_map_coordinate.x + a_global_plan_map_coordinate.y*customized_costmap_.info.width] = 50 - round((double)counter/(double)(total_plan_pixel_number-1)*50.0);
+            counter++;
+        }
 
         // --- ALTERNATIVE - TAKE RELEVANT PORTION OF GLOBAL PATH ---
         // Transformation of global path portion to frame of costmap
-        geometry_msgs::PoseStamped pose_source_frame; // pose given in source frame of global plan portion which is by default "odom"
+        /*geometry_msgs::PoseStamped pose_source_frame; // pose given in source frame of global plan portion which is by default "odom"
         geometry_msgs::PoseStamped pose_target_frame; // pose given in global frame of the local cost map
+
+        int counter = 0;
 
         for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_portion_.begin(); it != global_plan_portion_.end(); it++)
         {
@@ -525,13 +543,30 @@ namespace local_planner_wrapper
             y = round(((pose_target_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
             if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
             {
-                customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
+                if (customized_costmap_.data[x + y*customized_costmap_.info.width] == 70)
+                {
+                    customized_costmap_.data[x + y*customized_costmap_.info.width] = 0 + counter;
+                    counter++;
+                }
             }
-        }
+        }*/
 
         // --- 4. PUBLISH CUSTOMIZED COSTMAP
         customized_costmap_pub_.publish(customized_costmap_);// publish costmap
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
+
+        // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
+        std::cout << constcutive_costmaps_.data.size() << std::endl;
+        if (constcutive_costmaps_.data.size() == customized_costmap_.info.width*customized_costmap_.info.height*4) {
+            // publish
+            constcutive_costmaps_.info = customized_costmap_.info;
+            constcutive_costmaps_pub_.publish(constcutive_costmaps_);
+            // clear buffer
+            constcutive_costmaps_.data.clear();
+        } else {
+            // add to buffer
+            constcutive_costmaps_.data.insert(constcutive_costmaps_.data.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
+        }
     }
 
 };
