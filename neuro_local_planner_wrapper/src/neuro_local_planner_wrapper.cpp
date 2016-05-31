@@ -479,8 +479,10 @@ namespace neuro_local_planner_wrapper
         std::vector<geometry_msgs::Point> global_plan_map_coordinates;
         geometry_msgs::Point a_global_plan_map_coordinate;
 
+        std::vector<geometry_msgs::PoseStamped> global_plan_temp = global_plan_;
+
         //for(std::vector<geometry_msgs::PoseStamped>::reverse_iterator it = global_plan_.rbegin(); it != global_plan_.rend(); it++)
-        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_.begin(); it != global_plan_.end(); it++)
+        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_temp.begin(); it != global_plan_temp.end(); it++)
         {
             // Transform pose from fixed frame of global plan to global frame of local cost map
             pose_fixed_frame = *it;
@@ -559,7 +561,6 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
 
         // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
-        std::cout << constcutive_costmaps_.data.size() << std::endl;
         if (constcutive_costmaps_.data.size() == customized_costmap_.info.width*customized_costmap_.info.height*4) {
             // publish
             constcutive_costmaps_.info = customized_costmap_.info;
