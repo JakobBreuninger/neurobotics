@@ -47,7 +47,7 @@ namespace neuro_local_planner_wrapper
 
             laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &NeuroLocalPlannerWrapper::getLaserScanPoints, this);
 
-            global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
+            //global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
 
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
@@ -55,7 +55,7 @@ namespace neuro_local_planner_wrapper
 
             constcutive_costmaps_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("constcutive_costmaps", 1);
 
-            marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
+            //marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
             // --- Just for testing: ---
             // initialization of cost map as only updates are received
@@ -318,10 +318,10 @@ namespace neuro_local_planner_wrapper
         updated_costmap_pub_.publish(filtereded_costmap_);
     }*/
 
-    void NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
+    /*void NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
     {
         global_plan_portion_ = global_plan_portion.poses;
-    }
+    }*/
 
     void NeuroLocalPlannerWrapper::initializeCustomizedCostmap()
     {
@@ -350,7 +350,7 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.data = data;
     }
 
-    void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
+    /*void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
 
         visualization_msgs::Marker marker;
 
@@ -380,7 +380,7 @@ namespace neuro_local_planner_wrapper
         marker.color.a = 1.0;
 
         marker_array_.markers.push_back(marker);
-    }
+    }*/
 
     // Callback function for the subscriber to the laser scan
     // laser_scan:          this is the laser scan message
@@ -425,7 +425,7 @@ namespace neuro_local_planner_wrapper
             ROS_ERROR("%s",ex.what());
         }
 
-        marker_array_.markers.clear(); // marker array serves for visualization in rviz and has no functional meaning
+        // marker_array_.markers.clear(); // marker array serves for visualization in rviz and has no functional meaning
 
         double x_position_laser_scan_frame; // x position of laser scan point in frame of laser scan
         double y_position_laser_scan_frame; // y position of laser scan point in frame of laser scan
@@ -455,7 +455,7 @@ namespace neuro_local_planner_wrapper
                 y_position_robot_base_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
 
                 // visualization
-                addMarkerToArray(x_position_robot_base_frame, y_position_robot_base_frame, laser_scan_target_frame, customized_costmap_stamp);
+                // addMarkerToArray(x_position_robot_base_frame, y_position_robot_base_frame, laser_scan_target_frame, customized_costmap_stamp);
 
                 // transformation to costmap coordinates
                 int x, y;
@@ -469,7 +469,7 @@ namespace neuro_local_planner_wrapper
         }
 
         // visualization
-        marker_array_pub_.publish(marker_array_);
+        // marker_array_pub_.publish(marker_array_);
 
         // --- 3. ADD GLOBAL PATH AS WHITE PIXEL ---
         // Transform the global plan into costmap coordinates
@@ -479,8 +479,10 @@ namespace neuro_local_planner_wrapper
         std::vector<geometry_msgs::Point> global_plan_map_coordinates;
         geometry_msgs::Point a_global_plan_map_coordinate;
 
+        std::vector<geometry_msgs::PoseStamped> global_plan_temp = global_plan_;
+
         //for(std::vector<geometry_msgs::PoseStamped>::reverse_iterator it = global_plan_.rbegin(); it != global_plan_.rend(); it++)
-        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_.begin(); it != global_plan_.end(); it++)
+        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_temp.begin(); it != global_plan_temp.end(); it++)
         {
             // Transform pose from fixed frame of global plan to global frame of local cost map
             pose_fixed_frame = *it;
@@ -559,7 +561,6 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
 
         // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
-        std::cout << constcutive_costmaps_.data.size() << std::endl;
         if (constcutive_costmaps_.data.size() == customized_costmap_.info.width*customized_costmap_.info.height*4) {
             // publish
             constcutive_costmaps_.info = customized_costmap_.info;

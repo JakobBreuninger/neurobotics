@@ -21,7 +21,7 @@ class CostmapVisualizer:
         plt.axis('off')
         self.im_im.axes.figure.canvas.draw()
 
-        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid,
+        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", OccupancyGrid,
                                        self.im_callback)
 
     def im_callback(self, data):
@@ -30,7 +30,7 @@ class CostmapVisualizer:
         height = data.info.height
 
         fake_data = np.asarray([(100 - data) for data in data.data])
-        fake_data = np.hstack((fake_data, fake_data, fake_data, fake_data))
+        #fake_data = np.hstack((fake_data, fake_data, fake_data, fake_data))
 
         data_3d = fake_data.reshape(4, 80, 80).swapaxes(1, 2)
 

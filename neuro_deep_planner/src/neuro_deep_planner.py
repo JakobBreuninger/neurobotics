@@ -26,7 +26,7 @@ class InputSubscriber:
         self.reward = 0.0
 
         self.init = False
-        self.sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid,
+        self.sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", OccupancyGrid,
                                     self.input_callback)
         self.pub = rospy.Publisher("/Full/Path/Goes/Here", Twist)
 

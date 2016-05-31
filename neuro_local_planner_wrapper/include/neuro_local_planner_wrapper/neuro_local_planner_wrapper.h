@@ -84,7 +84,7 @@ namespace neuro_local_planner_wrapper
             // Callback function for the subscriber to portion of global plan
             // global_path_portion: this is the relevant portion of the global path
             // Return:              nothing
-            void setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion);
+            //void setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion);
 
             // Callback function for the subscriber to laser scan
             // laser_scan:          this is the laser scan message
@@ -116,9 +116,9 @@ namespace neuro_local_planner_wrapper
             //ros::Subscriber costmap_update_sub_;
 
             // Subscribe to global plan of TrajectoryPlannerROS which is a portion of the global plan that the local planner is currently attempting to follow
-            ros::Subscriber global_plan_portion_sub_;
+            //ros::Subscriber global_plan_portion_sub_;
 
-            std::vector<geometry_msgs::PoseStamped> global_plan_portion_;
+            //std::vector<geometry_msgs::PoseStamped> global_plan_portion_;
 
             // Subscribe to laser scan topic
             ros::Subscriber laser_scan_sub_;
@@ -126,13 +126,13 @@ namespace neuro_local_planner_wrapper
             // Publisher for customized costmap
             ros::Publisher customized_costmap_pub_;
 
-            ros::Publisher marker_array_pub_; // to_delete
+            //ros::Publisher marker_array_pub_; // to_delete
 
             ros::Publisher constcutive_costmaps_pub_;
 
             bool is_customized_costmap_initialized_;
 
-            tf::TransformBroadcaster tf_broadcaster_;
+            //tf::TransformBroadcaster tf_broadcaster_;
 
 
             // Our costmap ros interface
@@ -150,7 +150,7 @@ namespace neuro_local_planner_wrapper
             // Four consecutive costmaps stacked together in one vector
             nav_msgs::OccupancyGrid constcutive_costmaps_;
 
-            visualization_msgs::MarkerArray marker_array_;
+            //visualization_msgs::MarkerArray marker_array_;
 
             // Customized costmap
             //costmap_2d::Costmap2D customized_costmap_2d_; // to_delete
