@@ -23,7 +23,7 @@ def main():
     while not rospy.is_shutdown():
 
         # If we have a new msg we might have to execute an action and need to put the new experience in the buffer
-        if ros_handler.new_msg():
+        if ros_handler.mach():
 
             # If we are on policy we need to create the new action with the actor net
             if ONLINE:
@@ -36,10 +36,10 @@ def main():
             agent.set_experience(ros_handler.old_state, ros_handler.old_action, 0.0,
                                  ros_handler.new_state, False)
 
-        elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
+        #elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
 
             # Train the network!
-            agent.train()
+            # agent.train()
 
 
 if __name__ == '__main__':

@@ -27,17 +27,17 @@ class ROSHandler:
 
         self.reward = 0.0
 
-        self.sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/updated_costmap", OccupancyGrid,
+        self.sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", OccupancyGrid,
                                     self.input_callback)
         self.pub = rospy.Publisher("/Full/Path/Goes/Here", Twist)
 
-        self.new_msg = False
+        self.new_msg_flag = False
 
     def input_callback(self, data):
 
         # If msg is received for the first time adjust parameters
         if not self.init:
-            self.depth = data.info.depth
+            #self.depth = data.info.depth
             self.width = data.info.width
             self.height = data.info.height
             self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
@@ -52,15 +52,15 @@ class ROSHandler:
         self.new_state = np.asarray(data.data).reshape(4, 80, 80).swapaxes(1, 2)
 
         # Lets update the new reward
-        self.reward = data.reward
+        #self.reward = data.reward
 
         # Lets update the new action
-        if not self.on_policy:
-            self.new_action[0] = data.action.linear[0]
-            self.new_action[1] = data.action.angular[2]
+        #if not self.on_policy:
+        #    self.new_action[0] = data.action.linear[0]
+        #    self.new_action[1] = data.action.angular[2]
 
         # We have received a new msg
-        self.new_msg = True
+        self.new_msg_flag = True
 
     def publish_action(self):
 
@@ -80,8 +80,8 @@ class ROSHandler:
     def new_msg(self):
 
         output = False
-        if self.new_msg:
+        if self.new_msg_flag:
             output = True
-            self.new_msg = False
+            self.new_msg_flag = False
 
         return output
