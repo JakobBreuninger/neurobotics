@@ -22,8 +22,8 @@ class ROSHandler:
         self.new_action = np.zeros(2, dtype='float')
         self.old_action = np.zeros(2, dtype='float')
 
-        self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
-        self.old_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+        self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
+        self.old_state = np.zeros((self.depth, self.width, self.height), dtype='float')
 
         self.reward = 0.0
 
@@ -40,16 +40,16 @@ class ROSHandler:
             self.depth = data.info.depth
             self.width = data.info.width
             self.height = data.info.height
-            self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
-            self.new_costmap = np.zeros((self.depth, self.width, self.height), dtype='float')
+            self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
+            self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
             self.init = True
 
         # Safe the old costmap and action before we update the new one
-        self.old_costmap = self.new_costmap
+        self.old_state = self.new_state
         self.old_action = self.new_action
 
         # Lets update the new costmap its possible that we need to switch some axes here...
-        self.new_costmap = np.asarray(data.data).reshape(4, 80, 80).swapaxes(1, 2)
+        self.new_state = np.asarray(data.data).reshape(4, 80, 80).swapaxes(1, 2)
 
         # Lets update the new reward
         self.reward = data.reward
@@ -76,3 +76,12 @@ class ROSHandler:
 
         # Send the action back
         self.pub.publish(self.new_action)
+
+    def new_msg(self):
+
+        output = False
+        if self.new_msg:
+            output = True
+            self.new_msg = False
+
+        return output
