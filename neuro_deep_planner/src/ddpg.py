@@ -71,9 +71,7 @@ class DDPG:
 
         self.actor_network.train(q_gradient_batch, state_batch)
 
-        # Update the target networks
-        self.actor_network.update_target()
-        self.critic_network.update_target()
+        # Update the target networks TODO: DOit
 
     def get_action(self, state):
 

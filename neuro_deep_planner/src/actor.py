@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import math
 
 
@@ -44,7 +43,7 @@ class ActorNetwork:
             self.biases_fully2,\
             self.weights_final,\
             self.biases_final,\
-			self.action_output = self.create_network(image_size,action_size, image_no)
+            self.action_output = self.create_network(image_size,action_size, image_no)
 
             # Create Exponential Moing Average Object
             ema_obj = tf.train.ExponentialMovingAverage(decay=DECAY)
@@ -78,11 +77,11 @@ class ActorNetwork:
 
             # define training rules
             self.q_gradient_input = tf.placeholder("float",[None,action_size])
-            self.parameters = [self.weights_conv1,self.biases_conv1,\
-                            self.weights_conv2,self.biases_conv2,\
-                            self.weights_conv3,self.biases_conv3,\
-                            self.weights_fully1,self.biases_fully1,\
-                            self.weights_fully2,self.biases_fully2,\
+            self.parameters = [self.weights_conv1,self.biases_conv1,
+                            self.weights_conv2,self.biases_conv2,
+                            self.weights_conv3,self.biases_conv3,
+                            self.weights_fully1,self.biases_fully1,
+                            self.weights_fully2,self.biases_fully2,
                             self.weights_final,self.biases_final]
 
 
@@ -211,29 +210,29 @@ class ActorNetwork:
     def train(self,q_gradient_batch,state_batch):
         self.sess.run(self.optimizer,feed_dict={
             self.q_gradient_input:q_gradient_batch,
-            self.input_map:state_batch
+            self.map_input:state_batch
             })
 
 
 
     def get_action(self,state):
         return self.sess.run(self.action_output,feed_dict={
-            self.input_map:[state]
+            self.map_input:[state]
             })[0]
 
     def evaluate(self,state_batch):
         return self.sess.run(self.action_output,feed_dict={
-            self.input_map:state_batch
+            self.map_input:state_batch
             })
 
 
     def target_evaluate(self,state_batch):
         return self.sess.run(self.action_output_target,feed_dict={
-            self.input_map_input:state_batch
+            self.map_input:state_batch
             })
 
 
 
     # f fan-in size
     def variable(self,shape,f):
-    	return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))
+        return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))

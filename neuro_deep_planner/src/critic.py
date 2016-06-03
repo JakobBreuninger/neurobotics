@@ -205,35 +205,33 @@ class CriticNetwork:
 
 
     def train(self,y_batch,state_batch,action_batch):
-    	#action = np.transpose([action_batch])
+        #action = np.transpose([action_batch])
 
-    	self.sess.run(self.optimizer,feed_dict={
-    		self.y_input:np.transpose([y_batch]),
-    		self.map_input:state_batch,
-    		self.action_input:action_batch
-    		})
+        self.sess.run(self.optimizer,feed_dict={
+            self.y_input:np.transpose([y_batch]),
+            self.map_input:state_batch,
+            self.action_input:action_batch
+        })
 
 
     def gradients(self,state_batch,action_batch):
-    	return self.sess.run(self.action_gradients,feed_dict={
-    		self.map_input:map_input_batch,
-    		self.action_input:action_batch
-    		})[0]
+        return self.sess.run(self.action_gradients,feed_dict={
+            self.map_input:state_batch,
+            self.action_input:action_batch
+        })[0]
 
-	def evaluate(self,state_batch,action_batch):
-		return self.sess.run(self.Q_output,feed_dict={
-			self.map_input_target:state_batch,
-			self.action_input_target:action_batch
-			})
+    def evaluate(self,state_batch,action_batch):
+        return self.sess.run(self.Q_output,feed_dict={
+            self.map_input_target:state_batch,
+            self.action_input_target:action_batch
+        })
 
-	def target_evaluate(self,state_batch,action_batch):
-		return self.sess.run(self.Q_target_output,feed_dict={
-			self.map_input_target:state_batch,
-			self.action_input_target:action_batch
-			})
-
-
+    def target_evaluate(self,state_batch,action_batch):
+        return self.sess.run(self.Q_target_output,feed_dict={
+            self.map_input_target:state_batch,
+            self.action_input_target:action_batch
+        })
 
     # f fan-in size
     def variable(self,shape,f):
-    	return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))
+        return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))
