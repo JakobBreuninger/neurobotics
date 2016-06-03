@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+
 import rospy
 import numpy as np
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
 
 
-class RosHandler:
+class ROSHandler:
 
     def __init__(self, on_policy):
 
@@ -48,7 +49,7 @@ class RosHandler:
         self.old_action = self.new_action
 
         # Lets update the new costmap its possible that we need to switch some axes here...
-        self.new_costmap = np.asarray([(100 - data) for data in data.data]).reshape(self.width, self.height, self.depth)
+        self.new_costmap = np.asarray(data.data).reshape(4, 80, 80).swapaxes(1, 2)
 
         # Lets update the new reward
         self.reward = data.reward

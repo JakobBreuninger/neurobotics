@@ -94,7 +94,7 @@ namespace neuro_local_planner_wrapper
             costmap_ = costmap_ros_->getCostmap();
 
             // Should we use the dwa planner?
-            existing_plugin_ = true;
+            existing_plugin_ = false;
             std::string local_planner = "dwa_local_planner/DWAPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
