@@ -25,14 +25,22 @@ class DDPG:
 
         # Hardcode input size and action size
         self.height = 80
+        self.width = self.depth
         self.depth = 4
         self.action_dim = 2
+
+        # Initialize the current action and the old action for setting experiences
+        self.action = np.zeros((2, 1), dtype='float')
+        self.old_action = np.zeros((2, 1), dtype='float')
+
+        # Initialize the old state for setting experiences
+        self.old_state = np.zeros((self.depth, self.width, self.height), dtype='float')
 
         # Initialize actor and critic networks
         self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
 
-        # initialize replay buffer
+        # Initialize replay buffer
         self.replay_buffer = deque()
 
         # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
@@ -76,19 +84,23 @@ class DDPG:
     def get_action(self, state):
 
         # Select action a_t according to the current policy and exploration noise
-        action = self.actor_network.get_action(state) + self.exploration_noise.noise()
+        self.action = self.actor_network.get_action(state) + self.exploration_noise.noise()
 
         # TODO: Should we clip these values?
-        return action
+        return self.action
 
     def get_buffer_size(self):
 
         return len(self.replay_buffer)
 
-    def set_experience(self, state, action, reward, next_state, done):
+    def set_experience(self, state, reward, done):
 
         # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
-        self.replay_buffer.append((state, action, reward, next_state, done))
+        self.replay_buffer.append((self.old_state, self.old_action, reward, state, done))
+
+        # Safe old state and old action for next experience
+        self.old_state = state
+        self.old_action = self.action
 
         # Update time step
         self.time_step += 1

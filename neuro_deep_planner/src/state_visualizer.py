@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
+
 from collections import deque
+
 import rospy
+from neuro_local_planner_wrapper.msg import Transition
+
 import numpy as np
-from nav_msgs.msg import OccupancyGrid
 
 
 class CostmapVisualizer:
@@ -21,16 +24,20 @@ class CostmapVisualizer:
         plt.axis('off')
         self.im_im.axes.figure.canvas.draw()
 
-        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", OccupancyGrid,
+        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                        self.im_callback)
+
+        self.current_state_rep = Transition()
+        print self.current_state_rep
 
     def im_callback(self, data):
 
-        width = data.info.width
-        height = data.info.height
+        print 'Callback'
 
-        fake_data = np.asarray([(100 - data) for data in data.data])
-        # fake_data = np.hstack((fake_data, fake_data, fake_data, fake_data))
+        width = data.width
+        height = data.height
+
+        fake_data = np.asarray([(100 - data) for data in data.state_representation])
 
         data_3d = fake_data.reshape(4, 80, 80).swapaxes(1, 2)
 
