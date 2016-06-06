@@ -73,6 +73,8 @@ namespace neuro_local_planner_wrapper
 
             void initializeCustomizedCostmap();
 
+            void initializeTransitionMsg();
+
             void addMarkerToArray(double x, double y, std::string frame, ros::Time stamp); // to_delete
 
             // Listener to get our pose on the map
@@ -116,7 +118,7 @@ namespace neuro_local_planner_wrapper
 
 
             // Transition message with actual state representation which is four consecutive costmaps stacked together in one vector and actual reward
-            neuro_local_planner_wrapper::Transition transition_;
+            neuro_local_planner_wrapper::Transition transition_msg_;
 
 
             visualization_msgs::MarkerArray marker_array_; // to_delete
