@@ -34,54 +34,22 @@ namespace neuro_local_planner_wrapper
         // If we are not ininialized do so
         if (!initialized_)
         {
-            // Publishers subscribers
             ros::NodeHandle private_nh("~/" + name);
+
+            // Publishers & Subscribers
             g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
 
-            //updated_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("updated_costmap", 1);
-            //costmap_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap", 1000,
-                                                //&LocalPlannerWrapper::filterCostmap, this);
-            //costmap_update_sub_ = private_nh.subscribe("/move_base/local_costmap/costmap_updates", 1000,
-                                                //&LocalPlannerWrapper::updateCostmap, this);
+            state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
             laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &NeuroLocalPlannerWrapper::getLaserScanPoints, this);
-
-            //global_plan_portion_sub_ = private_nh.subscribe("/move_base/DWAPlannerROS/global_plan", 1000, &NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan, this);
-
-            state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
             customized_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("customized_costmap", 1);
 
             transition_pub_ = private_nh.advertise<neuro_local_planner_wrapper::Transition>("transition", 1);
 
-            //marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
+            marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
-            // --- Just for testing: ---
-            // initialization of cost map as only updates are received
-            /*filtereded_costmap_ = nav_msgs::OccupancyGrid();
-
-            filtereded_costmap_.header.frame_id = "/base_footprint";
-            filtereded_costmap_.header.stamp = ros::Time::now();
-
-            filtereded_costmap_.info.height = 80;
-            filtereded_costmap_.info.width = 80;
-            filtereded_costmap_.info.resolution = 0.05;
-            filtereded_costmap_.info.origin.position.x = -1.95;
-            filtereded_costmap_.info.origin.position.y = -1.95;
-            filtereded_costmap_.info.origin.position.z = 0.0;
-            filtereded_costmap_.info.origin.orientation.x = 0.0;
-            filtereded_costmap_.info.origin.orientation.y = 0.0;
-            filtereded_costmap_.info.origin.orientation.z = 0.0;
-            filtereded_costmap_.info.origin.orientation.w = 1.0;
-
-            std::vector<int8_t> data(6400,0);
-            filtereded_costmap_.data = data;*/
-
-
-            // -------------------------------------
-
-            is_customized_costmap_initialized_ = false;
 
             // Setup tf
             tf_ = tf;
@@ -93,12 +61,14 @@ namespace neuro_local_planner_wrapper
             // Get the actual costmap object
             costmap_ = costmap_ros_->getCostmap();
 
+            is_customized_costmap_initialized_ = false;
 
             transition_.width = costmap_->getSizeInCellsX();
             transition_.height = costmap_->getSizeInCellsY();
             transition_.depth = 4; // use four consecutive maps for state representation
 
             transition_.header.seq = 0;
+
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
@@ -233,39 +203,6 @@ namespace neuro_local_planner_wrapper
     }
 
 
-    // Callback function for the subscriber to the local costmap update
-    // costmap_update:      this is the costmap message
-    // Return:              nothing
-    /*void NeuroLocalPlannerWrapper::updateCostmap(map_msgs::OccupancyGridUpdate costmap_update) {
-
-        //std::cout << "Costmap update received -> update costmap!!!" << std::endl;
-
-        int index = 0;
-
-        for(int y = costmap_update.y; y < costmap_update.y + costmap_update.height; y++)
-        {
-            for(int x = costmap_update.x; x < costmap_update.x + costmap_update.width; x++)
-            {
-                filtereded_costmap_.data[getIndex(x,y)] = costmap_update.data[index++];
-            }
-        }
-
-        filtereded_costmap_.header = costmap_update.header;
-
-        filterCostmap(filtereded_costmap_);
-
-    }*/
-
-
-    // Get index for costmap update
-    // x:
-    // y:
-    // Return:
-    /*int NeuroLocalPlannerWrapper::getIndex(int x, int y)
-    {
-        int costmap_width = filtereded_costmap_.info.width;
-        return y * costmap_width + x;
-    }*/
 
 
     // Callback function for the subscriber to the local costmap
@@ -325,10 +262,6 @@ namespace neuro_local_planner_wrapper
         updated_costmap_pub_.publish(filtereded_costmap_);
     }*/
 
-    /*void NeuroLocalPlannerWrapper::setRelevantPortionOfGlobalPlan(nav_msgs::Path global_plan_portion)
-    {
-        global_plan_portion_ = global_plan_portion.poses;
-    }*/
 
     void NeuroLocalPlannerWrapper::initializeCustomizedCostmap()
     {
@@ -526,43 +459,6 @@ namespace neuro_local_planner_wrapper
             counter++;
         }
 
-        // --- ALTERNATIVE - TAKE RELEVANT PORTION OF GLOBAL PATH ---
-        // Transformation of global path portion to frame of costmap
-        /*geometry_msgs::PoseStamped pose_source_frame; // pose given in source frame of global plan portion which is by default "odom"
-        geometry_msgs::PoseStamped pose_target_frame; // pose given in global frame of the local cost map
-
-        int counter = 0;
-
-        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_portion_.begin(); it != global_plan_portion_.end(); it++)
-        {
-            // Transform pose from source frame of global plan portion to global frame of local cost map
-            pose_source_frame = *it;
-            try
-            {
-                pose_source_frame.header.stamp = customized_costmap_.header.stamp;
-                tf_->waitForTransform(customized_costmap_.header.frame_id, pose_source_frame.header.frame_id,
-                                      customized_costmap_.header.stamp, ros::Duration(0.2));
-                tf_->transformPose(customized_costmap_.header.frame_id, pose_source_frame, pose_target_frame);
-            }
-            catch (tf::TransformException ex)
-            {
-                ROS_ERROR("%s",ex.what());
-            }
-
-            // transformtion to costmap coordinates
-            int x, y;
-            x = round(((pose_target_frame.pose.position.x - customized_costmap_.info.origin.position.x)/costmap_->getSizeInMetersX())*customized_costmap_.info.width-0.5);
-            y = round(((pose_target_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
-            if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
-            {
-                if (customized_costmap_.data[x + y*customized_costmap_.info.width] == 70)
-                {
-                    customized_costmap_.data[x + y*customized_costmap_.info.width] = 0 + counter;
-                    counter++;
-                }
-            }
-        }*/
-
         // --- 4. PUBLISH CUSTOMIZED COSTMAP
         customized_costmap_pub_.publish(customized_costmap_); // publish costmap
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
@@ -582,7 +478,7 @@ namespace neuro_local_planner_wrapper
             transition_.state_representation.clear();
         } else {
             // add to buffer
-            transition_.state_representation.insert(transition_.state_representation.end(), transition_.state_representation.begin(), transition_.state_representation.end());
+            transition_.state_representation.insert(transition_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
         }
     }
 };
