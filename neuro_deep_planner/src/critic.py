@@ -20,7 +20,8 @@ FILTER3 = 32
 
 
 LEARNING_RATE = 0.0001
-DECAY = 0.001  # for target networks
+REGULARIZATION_DECAY = 0.01 # for L2 Regularization
+TARGET_DECAY = 0.001  # for target networks
 
 
 class CriticNetwork:
@@ -39,6 +40,7 @@ class CriticNetwork:
             self.biases_conv2,\
             self.weights_conv3,\
             self.biases_conv3,\
+            self.weights_actions,\
             self.weights_fully1,\
             self.biases_fully1,\
             self.weights_fully2,\
@@ -48,7 +50,7 @@ class CriticNetwork:
 			self.Q_output = self.create_network(image_size,action_size,image_no)
 
             # Create Exponential Moing Average Object
-            ema_obj = tf.train.ExponentialMovingAverage(decay=DECAY)
+            ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # get all the variables in the actor network
             with tf.variable_scope("critic") as scope:
@@ -68,6 +70,7 @@ class CriticNetwork:
             self.biases_conv2_target,\
             self.weights_conv3_target,\
             self.biases_conv3_target,\
+            self.weights_actions,\
             self.weights_fully1_target,\
             self.biases_fully1_target,\
             self.weights_fully2_target,\
@@ -77,10 +80,22 @@ class CriticNetwork:
             self.Q_target_output = self.create_target_network(image_size,
                 action_size,image_no, ema_obj,critic_variables)
 
+
+            # L2 Regularization for all Variables
+            self.regularization =
+            tf.nn.l2_loss(self.weights_conv1)+tf.nn.l2_loss(self.biases_conv1)+\
+            tf.nn.l2_loss(self.weights_conv2)+tf.nn.l2_loss(self.biases_conv2)+\
+            tf.nn.l2_loss(self.weights_conv3)+tf.nn.l2_loss(self.biases_conv3)+\
+            tf.nn.l2_loss(self.weights_actions)+\
+            tf.nn.l2_loss(self.weights_fully1)+tf.nn.l2_loss(self.biases_fully1)+\
+            tf.nn.l2_loss(self.weights_fully2)+tf.nn.l2_loss(self.biases_fully2)+\
+            tf.nn.l2_loss(self.weights_final)+tf.nn.l2_loss(self.biases_final)
+
             # Define training optimizer
             self.y_input = tf.placeholder("float",[None,1])
-            self.cost = tf.pow(self.Q_output-self.y_input,2)/batch_size
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.cost)
+            self.td_error = tf.pow(self.Q_output-self.y_input,2)/batch_size
+            self.loss = self.td_error + self.regularization
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
             self.action_gradients = tf.gradients(self.Q_output,self.action_input)
             #self.action_gradients = [self.action_gradients_v[0]/tf.to_float(tf.shape(self.action_gradients_v[0])[0])]
@@ -143,7 +158,7 @@ class CriticNetwork:
 
         # return all ops
         return map_input,action_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_fully1,\
+            biases_conv2,weights_conv3,biases_conv3, weights_actions, weights_fully1,\
             biases_fully1,weights_fully2, biases_fully2, weights_final,\
             biases_final,Q_output
 
@@ -199,7 +214,7 @@ class CriticNetwork:
 
         # return all ops
         return map_input,action_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_fully1,\
+            biases_conv2,weights_conv3,biases_conv3, weights_actions, weights_fully1,\
             biases_fully1,weights_fully2, biases_fully2, weights_final,\
             biases_final,Q_target_output
 
