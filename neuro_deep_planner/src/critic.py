@@ -82,7 +82,7 @@ class CriticNetwork:
 
 
             # L2 Regularization for all Variables
-            self.regularization =
+            self.regularization = \
             tf.nn.l2_loss(self.weights_conv1)+tf.nn.l2_loss(self.biases_conv1)+\
             tf.nn.l2_loss(self.weights_conv2)+tf.nn.l2_loss(self.biases_conv2)+\
             tf.nn.l2_loss(self.weights_conv3)+tf.nn.l2_loss(self.biases_conv3)+\
