@@ -17,11 +17,11 @@ class ROSHandler:
         self.height = 80
         self.width = 80
 
-        self.state = np.zeros((self.depth, self.width, self.height), dtype='float')
+        self.state = np.zeros((self.width, self.height, self.depth), dtype='float')
 
         self.reward = 0.0
 
-        self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", Transition,
+        self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                       self.input_callback)
         self.__pub = rospy.Publisher("/Full/Path/Goes/Here", Twist)
 
@@ -38,7 +38,8 @@ class ROSHandler:
             self.__init = True
 
         # Lets update the new costmap its possible that we need to switch some axes here...
-        self.state = np.asarray(transition_msg.state_representation).reshape(4, 80, 80).swapaxes(1, 2)
+        temp_state = np.asarray(transition_msg.state_representation).reshape(4, 80, 80).swapaxes(1, 2)
+        self.state = np.rollaxis(temp_state, 0, 3)
 
         # Lets update the new reward
         self.reward = transition_msg.reward

@@ -32,18 +32,21 @@ class CostmapVisualizer:
 
     def im_callback(self, data):
 
-        print 'Callback'
-
         width = data.width
         height = data.height
 
-        fake_data = np.asarray([(100 - data) for data in data.state_representation])
+        data_1d = np.asarray([(100 - data) for data in data.state_representation])
 
-        data_3d = fake_data.reshape(4, 80, 80).swapaxes(1, 2)
+        data_3d = data_1d.reshape(4, 80, 80).swapaxes(1, 2)
+
+        data_3d = np.rollaxis(data_3d, 0, 3)
 
         divider = np.full((80, 10), 75)
 
-        stacked_costmap = np.hstack((data_3d[0], divider, data_3d[1], divider, data_3d[2], divider, data_3d[3]))
+        stacked_costmap = np.hstack((data_3d[:, :, 0], divider,
+                                     data_3d[:, :, 1], divider,
+                                     data_3d[:, :, 2], divider,
+                                     data_3d[:, :, 3]))
 
         self.im_data.append(stacked_costmap)
 

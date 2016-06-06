@@ -4,7 +4,6 @@ project(neuro_deep_planner)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  neuro_local_planner_wrapper
 )
 
 include_directories(
