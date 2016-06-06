@@ -63,13 +63,6 @@ namespace neuro_local_planner_wrapper
 
             is_customized_costmap_initialized_ = false;
 
-            transition_.width = costmap_->getSizeInCellsX();
-            transition_.height = costmap_->getSizeInCellsY();
-            transition_.depth = 4; // use four consecutive maps for state representation
-
-            transition_.header.seq = 0;
-
-
             // Should we use the dwa planner?
             existing_plugin_ = true;
             std::string local_planner = "dwa_local_planner/DWAPlannerROS";
@@ -106,8 +99,6 @@ namespace neuro_local_planner_wrapper
     // Return:              True if plan was succesfully received...
     bool NeuroLocalPlannerWrapper::setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan)
     {
-
-        //std::cout << "DRIN" << std::endl;
 
         // Check if the planner has been initialized
         if (!initialized_)
@@ -288,6 +279,17 @@ namespace neuro_local_planner_wrapper
         // data
         std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
         customized_costmap_.data = data;
+
+        initializeTransitionMsg();
+    }
+
+    void NeuroLocalPlannerWrapper::initializeTransitionMsg()
+    {
+        transition_msg_.width = customized_costmap_.info.width;
+        transition_msg_.height = customized_costmap_.info.height;
+        transition_msg_.depth = 4; // use four consecutive maps for state representation
+
+        transition_msg_.header.seq = 0;
     }
 
     /*void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
@@ -327,11 +329,6 @@ namespace neuro_local_planner_wrapper
     // Return:              nothing
     void NeuroLocalPlannerWrapper::getLaserScanPoints(sensor_msgs::LaserScan laser_scan)
     {
-        /*tf::Transform transform;
-        transform.setOrigin(current_pose_.getOrigin());
-        transform.setRotation(current_pose_.getRotation());
-        tf_broadcaster_.sendTransform(tf::StampedTransform(transform, current_pose_.stamp_, current_pose_.frame_id_, "/base_footprint"));*/
-
         // --- 1. CLEAR COSTMAP/SET ALL PIXEL GRAY ---
         if (!is_customized_costmap_initialized_) // initialize costmap
         {
@@ -464,21 +461,21 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
 
         // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
-        if (transition_.state_representation.size() == transition_.width*
-                                                        transition_.height*
-                                                        transition_.depth)
+        if (transition_msg_.state_representation.size() == transition_msg_.width*
+                                                        transition_msg_.height*
+                                                        transition_msg_.depth)
         {
             // publish
-            transition_.header.stamp = customized_costmap_.header.stamp;
-            transition_.header.frame_id = customized_costmap_.header.frame_id;
+            transition_msg_.header.stamp = customized_costmap_.header.stamp;
+            transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
 
-            transition_pub_.publish(transition_);
-            transition_.header.seq = transition_.header.seq + 1;
+            transition_pub_.publish(transition_msg_);
+            transition_msg_.header.seq = transition_msg_.header.seq + 1;
             // clear buffer
-            transition_.state_representation.clear();
+            transition_msg_.state_representation.clear();
         } else {
             // add to buffer
-            transition_.state_representation.insert(transition_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
+            transition_msg_.state_representation.insert(transition_msg_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
         }
     }
 };
