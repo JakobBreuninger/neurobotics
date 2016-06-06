@@ -6,24 +6,28 @@ import math
 FULLY_LAYER1_SIZE = 200
 FULLY_LAYER2_SIZE = 200
 
-# params of conv nets
-RECEIPTIVE_FIELD1 = 8
-RECEIPTIVE_FIELD2 = 4
-RECEIPTIVE_FIELD3 = 3
+# Params of conv nets
+RECEPTIVE_FIELD1 = 8
+RECEPTIVE_FIELD2 = 4
+RECEPTIVE_FIELD3 = 3
+
 STRIDE1 = 4
 STRIDE2 = 2
 STRIDE3 = 1
+
 FILTER1 = 32
 FILTER2 = 32
 FILTER3 = 32
 
-
+#
 LEARNING_RATE = 0.0001
-TARGET_DECAY = 0.001 # for target networks
+
+TARGET_DECAY = 0.001
 
 
 class ActorNetwork:
-    def __init__(self,image_size,action_size, image_no, batch_size):
+
+    def __init__(self, image_size, action_size, image_no, batch_size):
 
         self.graph = tf.Graph()
         with self.graph.as_default():
@@ -45,7 +49,7 @@ class ActorNetwork:
             self.biases_final,\
             self.action_output = self.create_network(image_size,action_size, image_no)
 
-            # Create Exponential Moing Average Object
+            # Create Exponential moving Average Object
             ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # get all the variables in the actor network
@@ -75,23 +79,22 @@ class ActorNetwork:
                 action_size,image_no, ema_obj,actor_variables)
 
 
-            # define training rules
+            # Define training rules
             self.q_gradient_input = tf.placeholder("float",[None,action_size])
-            self.parameters = [self.weights_conv1,self.biases_conv1,
-                            self.weights_conv2,self.biases_conv2,
-                            self.weights_conv3,self.biases_conv3,
-                            self.weights_fully1,self.biases_fully1,
-                            self.weights_fully2,self.biases_fully2,
-                            self.weights_final,self.biases_final]
+            self.parameters = [self.weights_conv1, self.biases_conv1,
+                               self.weights_conv2, self.biases_conv2,
+                               self.weights_conv3, self.biases_conv3,
+                               self.weights_fully1, self.biases_fully1,
+                               self.weights_fully2, self.biases_fully2,
+                               self.weights_final, self.biases_final]
 
+            self.parameters_gradients = tf.gradients(self.action_output, self.parameters,
+                                                     -self.q_gradient_input/batch_size)
 
-
-            self.parameters_gradients = tf.gradients(self.action_output,self.parameters,-self.q_gradient_input/batch_size)
-            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,self.parameters))
+            self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
+                                                                                       self.parameters))
 
             self.sess.run(tf.initialize_all_variables())
-
-
 
     def create_network(self,image_size,action_size, image_no):
 
@@ -103,14 +106,14 @@ class ActorNetwork:
 
         with tf.variable_scope('actor'):
             #weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
-            weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
-            biases_conv1 = self.variable([FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
+            weights_conv1 = self.variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            biases_conv1 = self.variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
 
-            weights_conv2 = self.variable([RECEIPTIVE_FIELD2, RECEIPTIVE_FIELD2, FILTER1, FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
-            biases_conv2 = self.variable([FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
+            weights_conv2 = self.variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            biases_conv2 = self.variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
 
-            weights_conv3 = self.variable([RECEIPTIVE_FIELD3, RECEIPTIVE_FIELD3, FILTER2, FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
-            biases_conv3 = self.variable([FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
+            weights_conv3 = self.variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            biases_conv3 = self.variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
             weights_fully1 = self.variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)
             biases_fully1 = self.variable([FULLY_LAYER1_SIZE],conv3_output)
@@ -126,16 +129,12 @@ class ActorNetwork:
         #input_image = tf.reshape(input_array, [-1,image_size,image_size,1])
 
         # 3 convolutional layers
-        conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1,
-                    strides=[1, STRIDE1, STRIDE1, 1], padding='VALID')
-                    + biases_conv1)
-        #conv1.get_shape()
-        conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2,
-                    strides=[1, STRIDE2, STRIDE2, 1], padding='VALID')
-    	            + biases_conv2)
-        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3,
-                    strides=[1, STRIDE3, STRIDE3, 1], padding='VALID')
-    	            + biases_conv3)
+        conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1], padding='VALID') +
+                           biases_conv1)
+        conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
+                           biases_conv2)
+        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
+                           biases_conv3)
 
         # reshape output tensor to a rank 1 tensor
         conv3_flat = tf.reshape(conv3, [-1, conv3_output])

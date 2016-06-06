@@ -24,7 +24,6 @@ class DDPG:
     def __init__(self):
 
         # Hardcode input size and action size
-
         self.height = 84
         self.width = self.height
         self.depth = 4
