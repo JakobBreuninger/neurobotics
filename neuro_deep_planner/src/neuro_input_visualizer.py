@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import rospy
-from state_visualizer import CostmapVisualizer
 
+from state_visualizer import CostmapVisualizer
 
 def main():
 
