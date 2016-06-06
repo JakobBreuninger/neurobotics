@@ -38,7 +38,7 @@ class ROSHandler:
             self.__init = True
 
         # Lets update the new costmap its possible that we need to switch some axes here...
-        temp_state = np.asarray(transition_msg.state_representation).reshape(4, 80, 80).swapaxes(1, 2)
+        temp_state = np.asarray(transition_msg.state_representation).reshape(4, 84, 84).swapaxes(1, 2)
         self.state = np.rollaxis(temp_state, 0, 3)
 
         # Lets update the new reward

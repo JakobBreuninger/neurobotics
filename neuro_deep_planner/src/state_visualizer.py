@@ -37,11 +37,11 @@ class CostmapVisualizer:
 
         data_1d = np.asarray([(100 - data) for data in data.state_representation])
 
-        data_3d = data_1d.reshape(4, 80, 80).swapaxes(1, 2)
+        data_3d = data_1d.reshape(4, 84, 84).swapaxes(1, 2)
 
         data_3d = np.rollaxis(data_3d, 0, 3)
 
-        divider = np.full((80, 10), 75)
+        divider = np.full((84, 10), 75)
 
         stacked_costmap = np.hstack((data_3d[:, :, 0], divider,
                                      data_3d[:, :, 1], divider,
