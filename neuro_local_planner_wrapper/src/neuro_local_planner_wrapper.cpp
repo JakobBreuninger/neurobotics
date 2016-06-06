@@ -53,7 +53,7 @@ namespace neuro_local_planner_wrapper
 
             customized_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("customized_costmap", 1);
 
-            constcutive_costmaps_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("constcutive_costmaps", 1);
+            transition_pub_ = private_nh.advertise<neuro_local_planner_wrapper::Transition>("transition", 1);
 
             //marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
@@ -92,6 +92,13 @@ namespace neuro_local_planner_wrapper
 
             // Get the actual costmap object
             costmap_ = costmap_ros_->getCostmap();
+
+
+            transition_.width = costmap_->getSizeInCellsX();
+            transition_.height = costmap_->getSizeInCellsY();
+            transition_.depth = 4; // use four consecutive maps for state representation
+
+            transition_.header.seq = 0;
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
@@ -557,19 +564,25 @@ namespace neuro_local_planner_wrapper
         }*/
 
         // --- 4. PUBLISH CUSTOMIZED COSTMAP
-        customized_costmap_pub_.publish(customized_costmap_);// publish costmap
+        customized_costmap_pub_.publish(customized_costmap_); // publish costmap
         customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
 
         // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
-        if (constcutive_costmaps_.data.size() == customized_costmap_.info.width*customized_costmap_.info.height*4) {
+        if (transition_.state_representation.size() == transition_.width*
+                                                        transition_.height*
+                                                        transition_.depth)
+        {
             // publish
-            constcutive_costmaps_.info = customized_costmap_.info;
-            constcutive_costmaps_pub_.publish(constcutive_costmaps_);
+            transition_.header.stamp = customized_costmap_.header.stamp;
+            transition_.header.frame_id = customized_costmap_.header.frame_id;
+
+            transition_pub_.publish(transition_);
+            transition_.header.seq = transition_.header.seq + 1;
             // clear buffer
-            constcutive_costmaps_.data.clear();
+            transition_.state_representation.clear();
         } else {
             // add to buffer
-            constcutive_costmaps_.data.insert(constcutive_costmaps_.data.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
+            transition_.state_representation.insert(transition_.state_representation.end(), transition_.state_representation.begin(), transition_.state_representation.end());
         }
     }
 };

@@ -14,6 +14,8 @@
 #include <std_msgs/Bool.h>
 #include <pluginlib/class_loader.h>
 
+#include <neuro_local_planner_wrapper/Transition.h>
+
 #include <nav_msgs/OccupancyGrid.h>
 #include <map_msgs/OccupancyGridUpdate.h>
 #include <sensor_msgs/LaserScan.h>
@@ -128,7 +130,7 @@ namespace neuro_local_planner_wrapper
 
             //ros::Publisher marker_array_pub_; // to_delete
 
-            ros::Publisher constcutive_costmaps_pub_;
+            ros::Publisher transition_pub_;
 
             bool is_customized_costmap_initialized_;
 
@@ -147,8 +149,8 @@ namespace neuro_local_planner_wrapper
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
 
-            // Four consecutive costmaps stacked together in one vector
-            nav_msgs::OccupancyGrid constcutive_costmaps_;
+            // Transition message with actual state representation which is four consecutive costmaps stacked together in one vector and actual reward
+            neuro_local_planner_wrapper::Transition transition_;
 
             //visualization_msgs::MarkerArray marker_array_;
 
