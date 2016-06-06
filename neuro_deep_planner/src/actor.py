@@ -142,7 +142,7 @@ class ActorNetwork:
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        action_output= tanh(tf.matmul(fully2, weights_final) + biases_final)
+        action_output= tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
 
         # return all ops
         return map_input,weights_conv1,biases_conv1,weights_conv2,\
