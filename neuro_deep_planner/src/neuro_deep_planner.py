@@ -23,7 +23,7 @@ def main():
     while not rospy.is_shutdown():
 
         # If we have a new msg we might have to execute an action and need to put the new experience in the buffer
-        if ros_handler.mach():
+        if ros_handler.new_msg():
 
             # If we are on policy we need to create the new action with the actor net
             if ONLINE:
