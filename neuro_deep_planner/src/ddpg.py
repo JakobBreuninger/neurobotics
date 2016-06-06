@@ -25,7 +25,7 @@ class DDPG:
 
         # Hardcode input size and action size
 
-        self.height = 80
+        self.height = 84
         self.width = self.height
         self.depth = 4
         self.action_dim = 2
