@@ -23,7 +23,7 @@ class ROSHandler:
 
         self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                       self.input_callback)
-        self.__pub = rospy.Publisher("/Full/Path/Goes/Here", Twist)
+        self.__pub = rospy.Publisher("/Full/Path/Goes/Here", Twist, queue_size=10)
 
         self.__new_msg_flag = False
 
