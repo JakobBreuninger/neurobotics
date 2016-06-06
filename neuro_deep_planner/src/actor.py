@@ -19,7 +19,7 @@ FILTER3 = 32
 
 
 LEARNING_RATE = 0.0001
-DECAY = 0.001 # for target networks
+TARGET_DECAY = 0.001 # for target networks
 
 
 class ActorNetwork:
@@ -46,7 +46,7 @@ class ActorNetwork:
             self.action_output = self.create_network(image_size,action_size, image_no)
 
             # Create Exponential Moing Average Object
-            ema_obj = tf.train.ExponentialMovingAverage(decay=DECAY)
+            ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # get all the variables in the actor network
             with tf.variable_scope("actor") as scope:
@@ -95,13 +95,14 @@ class ActorNetwork:
 
     def create_network(self,image_size,action_size, image_no):
 
-
-        map_input = tf.placeholder("float",[None,image_size,image_size,image_no])
+        #map_input = tf.placeholder("float",[None,image_size,image_size,image_no])
+        map_input = tf.placeholder("float",[None, image_size,image_size, image_no])
 
         # this must be adjudted if the conv network architecture is changed:
         conv3_output = 7*7*32
 
         with tf.variable_scope('actor'):
+            #weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
             weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
             biases_conv1 = self.variable([FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
 
@@ -128,6 +129,7 @@ class ActorNetwork:
         conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1,
                     strides=[1, STRIDE1, STRIDE1, 1], padding='VALID')
                     + biases_conv1)
+        #conv1.get_shape()
         conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2,
                     strides=[1, STRIDE2, STRIDE2, 1], padding='VALID')
     	            + biases_conv2)
@@ -141,7 +143,7 @@ class ActorNetwork:
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        action_output= tf.matmul(fully2, weights_final) + biases_final
+        action_output= tanh(tf.matmul(fully2, weights_final) + biases_final)
 
         # return all ops
         return map_input,weights_conv1,biases_conv1,weights_conv2,\
@@ -151,7 +153,7 @@ class ActorNetwork:
 
     def create_target_network(self,image_size,action_size,image_no,ema_obj,actor_variables):
 
-        map_input = tf.placeholder("float",[None,image_size,image_size,image_no])
+        map_input = tf.placeholder("float",[image_no,image_size,image_size, None])
 
         # this must be adjudted if the conv network architecture is changed:
         conv3_output = 7*7*32

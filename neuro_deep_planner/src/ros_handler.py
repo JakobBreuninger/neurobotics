@@ -41,7 +41,6 @@ class ROSHandler:
             self.width = data.info.width
             self.height = data.info.height
             self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
-            self.new_state = np.zeros((self.depth, self.width, self.height), dtype='float')
             self.init = True
 
         # Safe the old costmap and action before we update the new one
@@ -49,6 +48,7 @@ class ROSHandler:
         self.old_action = self.new_action
 
         # Lets update the new costmap its possible that we need to switch some axes here...
+        self.new_state_temp = np.asarray(data.data).reshape(4, 80, 80)
         self.new_state = np.asarray(data.data).reshape(4, 80, 80).swapaxes(1, 2)
 
         # Lets update the new reward

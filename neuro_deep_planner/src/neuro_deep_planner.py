@@ -27,7 +27,7 @@ def main():
 
             # If we are on policy we need to create the new action with the actor net
             if ONLINE:
-                ros_handler.new_action = agent.get_action(ros_handler.new_state)
+                ros_handler.new_action = agent.get_action(ros_handler.new_state_temp)
 
             # Send back the action to execute
             ros_handler.publish_action()
