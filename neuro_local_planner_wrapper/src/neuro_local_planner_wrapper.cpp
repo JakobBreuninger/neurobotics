@@ -50,6 +50,11 @@ namespace neuro_local_planner_wrapper
 
             marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
+            action_pub_ = private_nh.advertise<geometry_msgs::Twist>("action", 1);
+
+            action_sub_ = private_nh.subscribe("/neuro_deep_planner/action", 1000, &NeuroLocalPlannerWrapper::callbackAction, this);
+
+
 
             // Setup tf
             tf_ = tf;
@@ -61,11 +66,13 @@ namespace neuro_local_planner_wrapper
             // Get the actual costmap object
             costmap_ = costmap_ros_->getCostmap();
 
-            is_running_ = false;
-
             // Initialize customized costmap and transition message
             initializeCustomizedCostmap();
             initializeTransitionMsg();
+
+            // initialize action to zero until first velocity command is computed
+            action_ = geometry_msgs::Twist();
+            setZeroAction();
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
@@ -86,6 +93,8 @@ namespace neuro_local_planner_wrapper
                     exit(1);
                 }
             }
+
+            is_running_ = false;
 
             // We are now initialized
             initialized_ = true;
@@ -112,6 +121,7 @@ namespace neuro_local_planner_wrapper
         }
 
         // Safe the global plan
+        global_plan_.clear();
         global_plan_ = orig_global_plan;
 
         // If we use the dwa:
@@ -136,98 +146,25 @@ namespace neuro_local_planner_wrapper
     // Return:              True if we didn't fail
     bool NeuroLocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
-        // std::cout << "vel cmd: " << ros::Time::now().toNSec() << std::endl;
+        // -------- TODO: to_delete if we are getting actions from TensorFlow node
+        if (is_running_) {
+            geometry_msgs::Twist action;
+            callbackAction(action);
+        } // ---------
 
-        // Should we use the network as a planner or the dwa planner?
-        if (!existing_plugin_)
-        {
-            // Lets drive in circles
-            cmd_vel.angular.z = 0.0;
-            cmd_vel.linear.x = 0.5;
-            return true;
-        }
-        // Use the existing local planner plugin
-        else
-        {
-            geometry_msgs::Twist cmd;
+        // if we want to use the setup move_base provides
+        //cmd_vel = action_;
 
-            if(tc_->computeVelocityCommands(cmd))
-            {
-                cmd_vel = cmd;
-
-                //std::cout << cmd_vel.linear.x << std::endl;
-                //std::cout << cmd_vel.linear.y << std::endl;
-                //std::cout << cmd_vel.angular.z << std::endl;
-
-                return true;
-            }
-            else
-            {
-                ROS_ERROR("Failed computing a command");
-                return false;
-            }
-        }
+        return true;
     }
 
 
     // Tell if goal was reached
     // --> Part of interface
-    // Return:              True if goal pose was reached
+    // Return:              always false as we are learning in episodes
     bool NeuroLocalPlannerWrapper::isGoalReached()
     {
-        // std::cout << "check:   " << ros::Time::now().toNSec() << std::endl;
-
-        // Get current position of robot
-        costmap_ros_->getRobotPose(current_pose_); // in frame odom
-
-        // Get goal position
-        geometry_msgs::PoseStamped goal_position = global_plan_.back();
-
-        // Transform current position of robot to map frame
-        tf::StampedTransform stamped_transform; // transformation between odom and map frame
-        try
-        {
-            tf_->lookupTransform(goal_position.header.frame_id, current_pose_.frame_id_, ros::Time(0), stamped_transform); // ros::Time(0) gives us the latedt availkable transform
-        }
-        catch (tf::TransformException ex)
-        {
-            ROS_ERROR("%s",ex.what());
-        }
-        // translation
-        double x_current_posen_map_frame = current_pose_.getOrigin().getX() + stamped_transform.getOrigin().getX();
-        double y_current_posen_map_frame = current_pose_.getOrigin().getY() + stamped_transform.getOrigin().getY();
-        // rotation
-        double roll, pitch, yaw;
-        stamped_transform.getBasis().getRPY(roll, pitch, yaw);
-        double x_temp = x_current_posen_map_frame;
-        double y_temp = y_current_posen_map_frame;
-        x_current_posen_map_frame = cos(yaw)*x_temp - sin(yaw)*y_temp;
-        y_current_posen_map_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
-
-        // Get distance from robot to goal -> for now we only consider distance but I think we could also include orientation
-        double dist = sqrt(pow((x_current_posen_map_frame - goal_position.pose.position.x), 2.0)
-                           + pow((y_current_posen_map_frame  -goal_position.pose.position.y), 2.0));
-
-        // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
-        if(dist < 0.2)
-        {
-            ROS_INFO("We made it to the goal!");
-
-            // Publish that a new round can be started with the stage_sim_bot
-            std_msgs::Bool new_round;
-            new_round.data = true;
-            state_pub_.publish(new_round);
-
-            is_running_ = false;
-
-            global_plan_.clear();
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        return false;
     }
 
     void NeuroLocalPlannerWrapper::initializeCustomizedCostmap()
@@ -266,7 +203,19 @@ namespace neuro_local_planner_wrapper
         transition_msg_.depth = 4; // use four consecutive maps for state representation 
     }
 
-    /*void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
+    void NeuroLocalPlannerWrapper::setZeroAction() {
+        // TODO: Are the following lines necessary or does constructor initialize values to zero???
+        action_.linear.x = 0.0;
+        action_.linear.y = 0.0;
+        action_.linear.z = 0.0;
+        action_.angular.x = 0.0;
+        action_.angular.y = 0.0;
+        action_.angular.z = 0.0;
+
+        action_pub_.publish(action_);
+    }
+
+    void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
 
         visualization_msgs::Marker marker;
 
@@ -296,46 +245,181 @@ namespace neuro_local_planner_wrapper
         marker.color.a = 1.0;
 
         marker_array_.markers.push_back(marker);
-    }*/
+    }
+
+    bool NeuroLocalPlannerWrapper::isCrashed(int& reward) { // TODO vielleicht schöner lösbar
+
+        // Get current position of robot
+        costmap_ros_->getRobotPose(current_pose_); // in frame odom
+        // Compute map coordinates
+        int robot_x;
+        int robot_y;
+        costmap_->worldToMapNoBounds(current_pose_.getOrigin().getX(), current_pose_.getOrigin().getY(), robot_x, robot_y);
+
+        //std::cout << "x: " << x << std::endl;
+        //std::cout << "y: " << y << std::endl;
+
+        int cost = costmap_->getCost(robot_x, robot_y);
+
+        if(cost >= 253)
+        {
+            //std::cout << cost << std::endl;
+            ROS_INFO("We crashed!");
+            reward = -1;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool NeuroLocalPlannerWrapper::isSubGoalReached(int& reward) {
+
+        // Get current position of robot
+        costmap_ros_->getRobotPose(current_pose_); // in frame odom
+
+        // Get goal position
+        geometry_msgs::PoseStamped goal_position = global_plan_.back();
+
+        // Transform current position of robot to map frame
+        tf::StampedTransform stamped_transform; // transformation between odom and map frame
+        try
+        {
+            tf_->lookupTransform(goal_position.header.frame_id, current_pose_.frame_id_, ros::Time(0), stamped_transform); // ros::Time(0) gives us the latedt availkable transform
+        }
+        catch (tf::TransformException ex)
+        {
+            ROS_ERROR("%s",ex.what());
+        }
+        // translation
+        double x_current_posen_map_frame = current_pose_.getOrigin().getX() + stamped_transform.getOrigin().getX();
+        double y_current_posen_map_frame = current_pose_.getOrigin().getY() + stamped_transform.getOrigin().getY();
+        // rotation
+        double roll, pitch, yaw;
+        stamped_transform.getBasis().getRPY(roll, pitch, yaw);
+        double x_temp = x_current_posen_map_frame;
+        double y_temp = y_current_posen_map_frame;
+        x_current_posen_map_frame = cos(yaw)*x_temp - sin(yaw)*y_temp;
+        y_current_posen_map_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
+
+        // Get distance from robot to goal -> for now we only consider distance but I think we could also include orientation
+        double dist = sqrt(pow((x_current_posen_map_frame - goal_position.pose.position.x), 2.0)
+                           + pow((y_current_posen_map_frame  -goal_position.pose.position.y), 2.0));
+
+        // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
+        if(dist < 0.2)
+        {
+            ROS_INFO("We made it to the goal!");
+            reward = 1;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    void NeuroLocalPlannerWrapper::callbackAction(geometry_msgs::Twist action)
+    {
+        if (!existing_plugin_) // Should we use the network as a planner or the dwa planner?
+        {
+            // Get action from net
+            action_ = action;
+        }
+        else // Use the existing local planner plugin
+        {
+            geometry_msgs::Twist cmd;
+
+            if(tc_->computeVelocityCommands(cmd))
+            {
+                if (is_running_) {
+                    action_ = cmd;
+                }
+            }
+            else
+            {
+                ROS_ERROR("Plugin failed computing a command");
+            }
+        }
+        action_pub_.publish(action_);
+    }
+
 
     // Callback function for the subscriber to the laser scan
     // laser_scan:          this is the laser scan message
     // Return:              nothing
     void NeuroLocalPlannerWrapper::buildStateRepresentation(sensor_msgs::LaserScan laser_scan)
     {
-        // check whether we reached the goal
         if (is_running_) {
 
-            // clear costmap/set all pixel gray
-            std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
-            customized_costmap_.data = data;
+            int reward = 0;
 
-            addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
+            if (isSubGoalReached(reward) || isCrashed(reward)) {
 
-            addGlobalPlan(); // add global plan as white pixel with some gradient to indicate its direction
+                is_running_ = false; // this should be the last transition published in this episode
 
-            // publish customized costmap for visualization
-            customized_costmap_pub_.publish(customized_costmap_); // publish costmap
-            customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
+                setZeroAction(); // stop moving
 
-            // build transition message
-            if (transition_msg_.state_representation.size() == transition_msg_.width*
-                                                            transition_msg_.height*
-                                                            transition_msg_.depth)
-            {
-                // publish
-                transition_msg_.header.stamp = customized_costmap_.header.stamp;
+                // Publish that a new round can be started with the stage_sim_bot
+
+                std_msgs::Bool new_round;
+                new_round.data = true;
+                state_pub_.publish(new_round);
+
+                // Publish transition message with empty state
+                transition_msg_.header.stamp = laser_scan.header.stamp;
                 transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
+
+                transition_msg_.is_episode_over = true;
+
+                transition_msg_.reward = reward;
+
+                transition_msg_.state_representation.clear(); // clear buffer to get empty state representation
 
                 transition_msg_pub_.publish(transition_msg_);
                 transition_msg_.header.seq = transition_msg_.header.seq + 1;
-                // clear buffer
-                transition_msg_.state_representation.clear();
+
             } else {
-                // add to buffer
+
+                // clear costmap/set all pixel gray
+                std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
+                customized_costmap_.data = data;
+
+                addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
+
+                addGlobalPlan(); // add global plan as white pixel with some gradient to indicate its direction
+
+                // publish customized costmap for visualization
+                customized_costmap_pub_.publish(customized_costmap_); // publish costmap
+                customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
+
+                // build transition message/add actual costmap to buffer
                 transition_msg_.state_representation.insert(transition_msg_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
+
+                // publish transition message after four consecutive costmaps are available
+                if (transition_msg_.state_representation.size() == transition_msg_.width*
+                                                                transition_msg_.height*
+                                                                transition_msg_.depth)
+                {
+                    // publish
+                    transition_msg_.header.stamp = customized_costmap_.header.stamp;
+                    transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
+
+                    transition_msg_.is_episode_over = false;
+
+                    transition_msg_.reward = reward;
+
+                    transition_msg_pub_.publish(transition_msg_);
+                    transition_msg_.header.seq = transition_msg_.header.seq + 1;
+                    // clear buffer
+                    transition_msg_.state_representation.clear();
+                }
+
             }
+
         }
+
     }
 
     void NeuroLocalPlannerWrapper::addLaserScanPoints(const sensor_msgs::LaserScan& laser_scan) {

@@ -389,11 +389,11 @@ Visualization Manager:
           Class: rviz/Map
           Color Scheme: map
           Draw Behind: false
-          Enabled: false
+          Enabled: true
           Name: Costmap
           Topic: /move_base/local_costmap/costmap
           Unreliable: false
-          Value: false
+          Value: true
         - Alpha: 1
           Buffer Length: 1
           Class: rviz/Path
@@ -582,11 +582,11 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 82.9847
+      Scale: 65.0259
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 3.15148
-      Y: 2.61449
+      X: -2.34601
+      Y: -0.423246
     Saved: ~
 Window Geometry:
   Displays:

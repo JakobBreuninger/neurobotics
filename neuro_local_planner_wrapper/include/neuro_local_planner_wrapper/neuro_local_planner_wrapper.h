@@ -71,11 +71,19 @@ namespace neuro_local_planner_wrapper
             // Return:              nothing
             void buildStateRepresentation(sensor_msgs::LaserScan laser_scan);
 
+            bool isCrashed(int& reward);
+
+            bool isSubGoalReached(int& reward);
+
             void initializeCustomizedCostmap();
 
             void initializeTransitionMsg();
 
+            void setZeroAction();
+
             void addMarkerToArray(double x, double y, std::string frame, ros::Time stamp); // to_delete
+
+            void callbackAction(geometry_msgs::Twist action);
 
             void addLaserScanPoints(const sensor_msgs::LaserScan& laser_scan);
 
@@ -90,8 +98,13 @@ namespace neuro_local_planner_wrapper
             // For visualisation, publishers of global and local plan
             ros::Publisher g_plan_pub_, l_plan_pub_; // TODO: never used right?
 
-            // Publisher to the stage_sim_bot
+            // Publisher to the stage_sim_bot after crash or reached goal
             ros::Publisher state_pub_;
+
+            // Publisher for velocity commands to neuro_stage_ros for direct controlling
+            ros::Publisher action_pub_;
+
+            ros::Subscriber action_sub_;
 
             // Subscribe to laser scan topic
             ros::Subscriber laser_scan_sub_;
@@ -117,7 +130,7 @@ namespace neuro_local_planner_wrapper
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
 
-            // Indicates whether we are running or not e.g. reached the goal or crashed
+            // Indicates whether episode is running or not e.g. reached the goal or crashed
             bool is_running_;
 
 
@@ -127,6 +140,9 @@ namespace neuro_local_planner_wrapper
 
             visualization_msgs::MarkerArray marker_array_; // to_delete
 
+
+            // last action received from network
+            geometry_msgs::Twist action_;
 
 
             // Our current pose
