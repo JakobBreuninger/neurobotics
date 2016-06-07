@@ -3,25 +3,29 @@ import numpy as np
 import math
 
 
-# Hyper Parameters
+# Params of fully connected layers
 FULLY_LAYER1_SIZE = 200
 FULLY_LAYER2_SIZE = 200
 
-# params of conv nets
-RECEIPTIVE_FIELD1 = 8
-RECEIPTIVE_FIELD2 = 4
-RECEIPTIVE_FIELD3 = 3
+# Params of conv layers
+RECEPTIVE_FIELD1 = 8
+RECEPTIVE_FIELD2 = 4
+RECEPTIVE_FIELD3 = 3
+
 STRIDE1 = 4
 STRIDE2 = 2
 STRIDE3 = 1
+
 FILTER1 = 32
 FILTER2 = 32
 FILTER3 = 32
 
+# Other Hyperparameters
+LEARNING_RATE = 0.0001       # standard learning rate
 
-LEARNING_RATE = 0.0001
-REGULARIZATION_DECAY = 0.01 # for L2 Regularization
-TARGET_DECAY = 0.001  # for target networks
+REGULARIZATION_DECAY = 0.01  # for L2 Regularization
+
+TARGET_DECAY = 0.001         # for target networks
 
 
 class CriticNetwork:
@@ -114,14 +118,14 @@ class CriticNetwork:
         conv3_output = 7*7*32
 
         with tf.variable_scope('critic'):
-            weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
-            biases_conv1 = self.variable([FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
+            weights_conv1 = self.variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            biases_conv1 = self.variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
 
-            weights_conv2 = self.variable([RECEIPTIVE_FIELD2, RECEIPTIVE_FIELD2, FILTER1, FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
-            biases_conv2 = self.variable([FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
+            weights_conv2 = self.variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            biases_conv2 = self.variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
 
-            weights_conv3 = self.variable([RECEIPTIVE_FIELD3, RECEIPTIVE_FIELD3, FILTER2, FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
-            biases_conv3 = self.variable([FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
+            weights_conv3 = self.variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            biases_conv3 = self.variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
             weights_actions = self.variable([action_size, FULLY_LAYER1_SIZE],action_size)
             weights_fully1 = self.variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)

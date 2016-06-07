@@ -42,7 +42,6 @@ class ROSHandler:
         temp_state = np.asarray(transition_msg.state_representation).reshape(4, 84, 84).swapaxes(1, 2)
         self.state = np.rollaxis(temp_state, 0, 3)
 
-
         # Lets update the new reward
         self.reward = transition_msg.reward
 
