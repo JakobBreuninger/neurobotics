@@ -7,7 +7,7 @@ from ddpg import DDPG
 
 # Hyper parameters
 ONLINE = True
-MIN_BUFFER_SIZE = 20
+MIN_BUFFER_SIZE = 5
 
 
 def main():

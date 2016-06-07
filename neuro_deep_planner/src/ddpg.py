@@ -10,7 +10,7 @@ from actor import ActorNetwork
 REPLAY_BUFFER_SIZE = 10000  # How big can the buffer get
 REPLAY_START_SIZE = 500     # When do we start training
 
-BATCH_SIZE = 16             # How big are our batches
+BATCH_SIZE = 3             # How big are our batches
 
 GAMMA = 0.99                # Discount factor
 
@@ -31,7 +31,7 @@ class DDPG:
 
         # Initialize the current action and the old action for setting experiences
         self.action = np.zeros((2, 1), dtype='float')
-        self.old_action = np.zeros((2, 1), dtype='float')
+        self.old_action = np.zeros((2), dtype='float')
 
         # Initialize the old state for setting experiences
         self.old_state = np.zeros((self.depth, self.width, self.height), dtype='float')
@@ -49,22 +49,25 @@ class DDPG:
         # Initialize time step
         self.time_step = 0
 
+
     def train(self):
 
         print("training")
         # Sample a random minibatch of N transitions from replay buffer
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-        state_batch = [data[0] for data in minibatch]
-        action_batch = [data[1] for data in minibatch]
-        #action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
-        reward_batch = [data[2] for data in minibatch]
-        next_state_batch = [data[3] for data in minibatch]
-        #hi
+        state_batch = ([data[0] for data in minibatch])
+
+        action_batch = ([data[1] for data in minibatch])
+        #action_batch = np.resize(action_batch, [BATCH_SIZE, 2])
+        reward_batch = ([data[2] for data in minibatch])
+        next_state_batch = ([data[3] for data in minibatch])
 
         # Calculate y
         y_batch = []
-        next_action_batch = self.actor_network.target_evaluate(next_state_batch)
+        next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
+
         q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
+
         for i in range(0, BATCH_SIZE):
             done = minibatch[i][4]
             if done:
@@ -73,6 +76,23 @@ class DDPG:
                 y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
         # Update critic by minimizing the loss L
+        print "action_batch:"
+        print action_batch
+        print "type:"
+        print type(action_batch[0])
+        print type(action_batch[1])
+        print type(action_batch[2])
+        print "stack:"
+        action_batch = np.vstack([x for x in action_batch])
+        print action_batch
+        print "type after stack:"
+        print type(action_batch[0])
+        print type(action_batch[1])
+        print type(action_batch[2])
+        print "type data:"
+        print type(action_batch[0][0])
+        print type(action_batch[1][0])
+        print type(action_batch[2][0])
         self.critic_network.train(y_batch, state_batch, action_batch)
 
         # Update the actor policy using the sampled gradient:
@@ -87,7 +107,6 @@ class DDPG:
 
         # Select action a_t according to the current policy and exploration noise
         self.action = self.actor_network.get_action(state) + self.exploration_noise.noise()
-
         # TODO: Should we clip these values?
         return self.action
 
