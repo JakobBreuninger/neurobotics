@@ -21,7 +21,7 @@ resolution 0.01
 
 # Simulation timestep in milliseconds and realtime factor
 interval_sim 100
-speedup 2.0
+speedup 1.5
 
 window
 (

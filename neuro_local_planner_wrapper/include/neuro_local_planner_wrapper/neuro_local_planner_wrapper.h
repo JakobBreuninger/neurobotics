@@ -69,13 +69,17 @@ namespace neuro_local_planner_wrapper
             // Callback function for the subscriber to laser scan
             // laser_scan:          this is the laser scan message
             // Return:              nothing
-            void getLaserScanPoints(sensor_msgs::LaserScan laser_scan);
+            void buildStateRepresentation(sensor_msgs::LaserScan laser_scan);
 
             void initializeCustomizedCostmap();
 
             void initializeTransitionMsg();
 
             void addMarkerToArray(double x, double y, std::string frame, ros::Time stamp); // to_delete
+
+            void addLaserScanPoints(const sensor_msgs::LaserScan& laser_scan);
+
+            void addGlobalPlan();
 
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
@@ -96,7 +100,7 @@ namespace neuro_local_planner_wrapper
             ros::Publisher customized_costmap_pub_;
 
             // Publisher for communication with TensorFlow
-            ros::Publisher transition_pub_;
+            ros::Publisher transition_msg_pub_;
 
             ros::Publisher marker_array_pub_; // to_delete
 
@@ -113,8 +117,8 @@ namespace neuro_local_planner_wrapper
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
 
-            // Indicates whether customized costmap has been initialized
-            bool is_customized_costmap_initialized_;
+            // Indicates whether we are running or not e.g. reached the goal or crashed
+            bool is_running_;
 
 
             // Transition message with actual state representation which is four consecutive costmaps stacked together in one vector and actual reward
@@ -127,9 +131,6 @@ namespace neuro_local_planner_wrapper
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
-
-            // Our goal pose
-            geometry_msgs::Pose goal_;
 
             // The current global plan in normal and costmap coordinates
             std::vector<geometry_msgs::PoseStamped> global_plan_;

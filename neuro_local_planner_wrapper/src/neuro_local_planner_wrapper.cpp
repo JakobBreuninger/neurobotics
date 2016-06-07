@@ -42,11 +42,11 @@ namespace neuro_local_planner_wrapper
 
             state_pub_ = private_nh.advertise<std_msgs::Bool>("new_round", 1);
 
-            laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &NeuroLocalPlannerWrapper::getLaserScanPoints, this);
+            laser_scan_sub_ = private_nh.subscribe("/scan", 1000, &NeuroLocalPlannerWrapper::buildStateRepresentation, this);
 
             customized_costmap_pub_ = private_nh.advertise<nav_msgs::OccupancyGrid>("customized_costmap", 1);
 
-            transition_pub_ = private_nh.advertise<neuro_local_planner_wrapper::Transition>("transition", 1);
+            transition_msg_pub_ = private_nh.advertise<neuro_local_planner_wrapper::Transition>("transition", 1);
 
             marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
@@ -61,7 +61,11 @@ namespace neuro_local_planner_wrapper
             // Get the actual costmap object
             costmap_ = costmap_ros_->getCostmap();
 
-            is_customized_costmap_initialized_ = false;
+            is_running_ = false;
+
+            // Initialize customized costmap and transition message
+            initializeCustomizedCostmap();
+            initializeTransitionMsg();
 
             // Should we use the dwa planner?
             existing_plugin_ = true;
@@ -108,12 +112,7 @@ namespace neuro_local_planner_wrapper
         }
 
         // Safe the global plan
-        global_plan_.clear();
         global_plan_ = orig_global_plan;
-
-        // Set the goal position so we can check if we have arrived or not
-        goal_.position.x = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.x;
-        goal_.position.y = orig_global_plan.at(orig_global_plan.size() - 1).pose.position.y;
 
         // If we use the dwa:
         // This code is copied from the dwa_planner
@@ -125,6 +124,9 @@ namespace neuro_local_planner_wrapper
                 return false;
             }
         }
+
+        is_running_ = true;
+
         return true;
     }
 
@@ -134,6 +136,8 @@ namespace neuro_local_planner_wrapper
     // Return:              True if we didn't fail
     bool NeuroLocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
+        // std::cout << "vel cmd: " << ros::Time::now().toNSec() << std::endl;
+
         // Should we use the network as a planner or the dwa planner?
         if (!existing_plugin_)
         {
@@ -150,6 +154,11 @@ namespace neuro_local_planner_wrapper
             if(tc_->computeVelocityCommands(cmd))
             {
                 cmd_vel = cmd;
+
+                //std::cout << cmd_vel.linear.x << std::endl;
+                //std::cout << cmd_vel.linear.y << std::endl;
+                //std::cout << cmd_vel.angular.z << std::endl;
+
                 return true;
             }
             else
@@ -166,14 +175,38 @@ namespace neuro_local_planner_wrapper
     // Return:              True if goal pose was reached
     bool NeuroLocalPlannerWrapper::isGoalReached()
     {
-        // Get current position
-        costmap_ros_->getRobotPose(current_pose_);
+        // std::cout << "check:   " << ros::Time::now().toNSec() << std::endl;
 
-        // Get distance from position to goal, probably there is a better way to do this
-        double dist = sqrt(pow((current_pose_.getOrigin().getX() - goal_.position.x
-                                + costmap_->getSizeInMetersX()/2), 2.0)
-                           + pow((current_pose_.getOrigin().getY()  - goal_.position.y
-                                  + costmap_->getSizeInMetersY()/2), 2.0));
+        // Get current position of robot
+        costmap_ros_->getRobotPose(current_pose_); // in frame odom
+
+        // Get goal position
+        geometry_msgs::PoseStamped goal_position = global_plan_.back();
+
+        // Transform current position of robot to map frame
+        tf::StampedTransform stamped_transform; // transformation between odom and map frame
+        try
+        {
+            tf_->lookupTransform(goal_position.header.frame_id, current_pose_.frame_id_, ros::Time(0), stamped_transform); // ros::Time(0) gives us the latedt availkable transform
+        }
+        catch (tf::TransformException ex)
+        {
+            ROS_ERROR("%s",ex.what());
+        }
+        // translation
+        double x_current_posen_map_frame = current_pose_.getOrigin().getX() + stamped_transform.getOrigin().getX();
+        double y_current_posen_map_frame = current_pose_.getOrigin().getY() + stamped_transform.getOrigin().getY();
+        // rotation
+        double roll, pitch, yaw;
+        stamped_transform.getBasis().getRPY(roll, pitch, yaw);
+        double x_temp = x_current_posen_map_frame;
+        double y_temp = y_current_posen_map_frame;
+        x_current_posen_map_frame = cos(yaw)*x_temp - sin(yaw)*y_temp;
+        y_current_posen_map_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
+
+        // Get distance from robot to goal -> for now we only consider distance but I think we could also include orientation
+        double dist = sqrt(pow((x_current_posen_map_frame - goal_position.pose.position.x), 2.0)
+                           + pow((y_current_posen_map_frame  -goal_position.pose.position.y), 2.0));
 
         // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
         if(dist < 0.2)
@@ -184,7 +217,11 @@ namespace neuro_local_planner_wrapper
             std_msgs::Bool new_round;
             new_round.data = true;
             state_pub_.publish(new_round);
+
+            is_running_ = false;
+
             global_plan_.clear();
+
             return true;
         }
         else
@@ -192,67 +229,6 @@ namespace neuro_local_planner_wrapper
             return false;
         }
     }
-
-
-
-
-    // Callback function for the subscriber to the local costmap
-    // costmap:             this is the costmap message
-    // Return:              nothing
-
-    /*void NeuroLocalPlannerWrapper::filterCostmap(nav_msgs::OccupancyGrid costmap)
-    {
-        filtereded_costmap_ = costmap;
-
-        // Get costmap size
-        int width = filtereded_costmap_.info.width;
-        int height = filtereded_costmap_.info.height;
-
-        // Change the costmap
-        for (int i = 0; i < height; i++)
-        {
-            for (int j = 0; j < width; j++)
-            {
-                if (filtereded_costmap_.data[i * width + j] < 100)
-                {
-                    filtereded_costmap_.data[i * width + j] = 50;
-                }
-                else
-                {
-                    filtereded_costmap_.data[i * width + j] = 100;
-                }
-            }
-        }
-
-        // Transform the global plan into costmap coordinates
-        unsigned int x, y;
-        geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
-        geometry_msgs::PoseStamped pose_robot_base_frame; // pose given in global frame of the local cost map
-
-        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_.begin(); it != global_plan_.end(); it++)
-        {
-            // Transform pose from fixed frame of global plan to global frame of local cost map
-            pose_fixed_frame = *it;
-            try
-            {
-                pose_fixed_frame.header.stamp = costmap.header.stamp;
-                tf_->transformPose(costmap.header.frame_id, pose_fixed_frame, pose_robot_base_frame);
-            }
-            catch (tf::TransformException ex)
-            {
-                ROS_ERROR("%s",ex.what());
-            }
-
-            // Transformtion to costmap coordinates
-            if (costmap_->worldToMap(pose_robot_base_frame.pose.position.x, pose_robot_base_frame.pose.position.y, x, y))
-            {
-                filtereded_costmap_.data[x + y*width] = 0;
-            }
-        }
-
-        updated_costmap_pub_.publish(filtereded_costmap_);
-    }*/
-
 
     void NeuroLocalPlannerWrapper::initializeCustomizedCostmap()
     {
@@ -275,21 +251,19 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.info.origin.orientation.z = 0.0;
         customized_costmap_.info.origin.orientation.w = 1.0;
         // customized_costmap_.info.map_load_time important?
-
-        // data
-        std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
-        customized_costmap_.data = data;
-
-        initializeTransitionMsg();
     }
 
     void NeuroLocalPlannerWrapper::initializeTransitionMsg()
     {
+        // header
+        transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
+        transition_msg_.header.stamp = customized_costmap_.header.stamp;
+        transition_msg_.header.seq = 0;
+
+        // info
         transition_msg_.width = customized_costmap_.info.width;
         transition_msg_.height = customized_costmap_.info.height;
-        transition_msg_.depth = 4; // use four consecutive maps for state representation
-
-        transition_msg_.header.seq = 0;
+        transition_msg_.depth = 4; // use four consecutive maps for state representation 
     }
 
     /*void NeuroLocalPlannerWrapper::addMarkerToArray(double x, double y, std::string frame, ros::Time stamp) {
@@ -327,19 +301,44 @@ namespace neuro_local_planner_wrapper
     // Callback function for the subscriber to the laser scan
     // laser_scan:          this is the laser scan message
     // Return:              nothing
-    void NeuroLocalPlannerWrapper::getLaserScanPoints(sensor_msgs::LaserScan laser_scan)
+    void NeuroLocalPlannerWrapper::buildStateRepresentation(sensor_msgs::LaserScan laser_scan)
     {
-        // --- 1. CLEAR COSTMAP/SET ALL PIXEL GRAY ---
-        if (!is_customized_costmap_initialized_) // initialize costmap
-        {
-            initializeCustomizedCostmap();
-            is_customized_costmap_initialized_ = true;
-        } else { // clear costmap -> set all pixel of costmap to same value e.g. 70
+        // check whether we reached the goal
+        if (is_running_) {
+
+            // clear costmap/set all pixel gray
             std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
             customized_costmap_.data = data;
-        }
 
-        // --- 2. ADD LASER SCAN POINTS AS INVALID/BLACK PIXEL ---
+            addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
+
+            addGlobalPlan(); // add global plan as white pixel with some gradient to indicate its direction
+
+            // publish customized costmap for visualization
+            customized_costmap_pub_.publish(customized_costmap_); // publish costmap
+            customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
+
+            // build transition message
+            if (transition_msg_.state_representation.size() == transition_msg_.width*
+                                                            transition_msg_.height*
+                                                            transition_msg_.depth)
+            {
+                // publish
+                transition_msg_.header.stamp = customized_costmap_.header.stamp;
+                transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
+
+                transition_msg_pub_.publish(transition_msg_);
+                transition_msg_.header.seq = transition_msg_.header.seq + 1;
+                // clear buffer
+                transition_msg_.state_representation.clear();
+            } else {
+                // add to buffer
+                transition_msg_.state_representation.insert(transition_msg_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
+            }
+        }
+    }
+
+    void NeuroLocalPlannerWrapper::addLaserScanPoints(const sensor_msgs::LaserScan& laser_scan) {
         // get source frame and target frame of laser scan points
         std::string laser_scan_source_frame = laser_scan.header.frame_id;
         std::string laser_scan_target_frame = customized_costmap_.header.frame_id;
@@ -353,8 +352,6 @@ namespace neuro_local_planner_wrapper
         tf::StampedTransform stamped_transform;
         try
         {
-            //tf_->lookupTransform(laser_scan_target_frame, customized_costmap_stamp, laser_scan_source_frame, laser_scan_stamp, "/map", stamped_transform);
-            //tf_->lookupTransform(laser_scan_target_frame, laser_scan_source_frame, laser_scan_stamp, stamped_transform);
             tf_->lookupTransform(laser_scan_target_frame, laser_scan_source_frame, ros::Time(0), stamped_transform); // ros::Time(0) gives us the latedt availkable transform
         }
         catch (tf::TransformException ex)
@@ -362,7 +359,7 @@ namespace neuro_local_planner_wrapper
             ROS_ERROR("%s",ex.what());
         }
 
-        // marker_array_.markers.clear(); // marker array serves for visualization in rviz and has no functional meaning
+        // marker_array_.markers.clear(); // marker array serves for visualization in rviz and has no functional meaning // to_delete
 
         double x_position_laser_scan_frame; // x position of laser scan point in frame of laser scan
         double y_position_laser_scan_frame; // y position of laser scan point in frame of laser scan
@@ -391,8 +388,7 @@ namespace neuro_local_planner_wrapper
                 x_position_robot_base_frame = cos(yaw)*x_temp - sin(yaw)*y_temp;
                 y_position_robot_base_frame = sin(yaw)*x_temp + cos(yaw)*y_temp;
 
-                // visualization
-                // addMarkerToArray(x_position_robot_base_frame, y_position_robot_base_frame, laser_scan_target_frame, customized_costmap_stamp);
+                // addMarkerToArray(x_position_robot_base_frame, y_position_robot_base_frame, laser_scan_target_frame, customized_costmap_stamp); // to_delete
 
                 // transformation to costmap coordinates
                 int x, y;
@@ -405,10 +401,10 @@ namespace neuro_local_planner_wrapper
             }
         }
 
-        // visualization
-        // marker_array_pub_.publish(marker_array_);
+        // marker_array_pub_.publish(marker_array_); // to_delete
+    }
 
-        // --- 3. ADD GLOBAL PATH AS WHITE PIXEL ---
+    void NeuroLocalPlannerWrapper::addGlobalPlan() {
         // Transform the global plan into costmap coordinates
         geometry_msgs::PoseStamped pose_fixed_frame; // pose given in fixed frame of global plan which is by default "map"
         geometry_msgs::PoseStamped pose_robot_base_frame; // pose given in global frame of the local cost map
@@ -455,27 +451,6 @@ namespace neuro_local_planner_wrapper
             customized_costmap_.data[a_global_plan_map_coordinate.x + a_global_plan_map_coordinate.y*customized_costmap_.info.width] = 50 - round((double)counter/(double)(total_plan_pixel_number-1)*50.0);
             counter++;
         }
-
-        // --- 4. PUBLISH CUSTOMIZED COSTMAP
-        customized_costmap_pub_.publish(customized_costmap_); // publish costmap
-        customized_costmap_.header.seq = customized_costmap_.header.seq + 1; // increment seq for next costmap
-
-        // --- 5. BUFFER WITH CONSECUTIVE COSTMAPS ---
-        if (transition_msg_.state_representation.size() == transition_msg_.width*
-                                                        transition_msg_.height*
-                                                        transition_msg_.depth)
-        {
-            // publish
-            transition_msg_.header.stamp = customized_costmap_.header.stamp;
-            transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
-
-            transition_pub_.publish(transition_msg_);
-            transition_msg_.header.seq = transition_msg_.header.seq + 1;
-            // clear buffer
-            transition_msg_.state_representation.clear();
-        } else {
-            // add to buffer
-            transition_msg_.state_representation.insert(transition_msg_.state_representation.end(), customized_costmap_.data.begin(), customized_costmap_.data.end());
-        }
     }
+
 };
