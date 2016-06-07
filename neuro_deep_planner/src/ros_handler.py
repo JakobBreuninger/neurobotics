@@ -4,7 +4,7 @@
 import rospy
 import numpy as np
 from neuro_local_planner_wrapper.msg import Transition
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 
 
 class ROSHandler:
@@ -50,16 +50,19 @@ class ROSHandler:
 
     def publish_action(self, action):
 
-        # Generate msg output
-        vel_cmd = Twist()
 
-        vel_cmd.linear[0] = action[0]
+        # Generate msg output
+        vel_cmd = Twist(Vector3(action[0],0,0),Vector3(0,0,action[1]))
+
+
+
+        '''vel_cmd.linear[0] = 1#action[0]
         vel_cmd.linear[1] = 0.0
         vel_cmd.linear[2] = 0.0
 
-        vel_cmd.angular[0] = 0.0
+        vel_cmd.angular[0] = 1#0.0
         vel_cmd.angular[1] = 0.0
-        vel_cmd.angular[3] = action[1]
+        vel_cmd.angular[3] = action[1]'''
 
         # Send the action back
         self.__pub.publish(vel_cmd)
