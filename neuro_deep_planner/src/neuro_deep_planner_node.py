@@ -31,10 +31,10 @@ def main():
             # Safe the past state and action + the reward and new state into the replay buffer
             agent.set_experience(ros_handler.state, ros_handler.reward, False)
 
-        #elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
+        elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
 
             # Train the network!
-            # agent.train()
+            agent.train()
 
 
 if __name__ == '__main__':
