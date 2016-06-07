@@ -50,6 +50,8 @@ namespace neuro_local_planner_wrapper
 
             marker_array_pub_ = private_nh.advertise<visualization_msgs::MarkerArray>("visualization_marker_array", 1); // to_delete
 
+            actions_sub_ = private_nh.subscribe("action_output", 1000, &NeuroLocalPlannerWrapper::computeVelocityCommands, this);
+
 
             // Setup tf
             tf_ = tf;
@@ -64,7 +66,7 @@ namespace neuro_local_planner_wrapper
             is_customized_costmap_initialized_ = false;
 
             // Should we use the dwa planner?
-            existing_plugin_ = true;
+            existing_plugin_ = false;
             std::string local_planner = "dwa_local_planner/DWAPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us

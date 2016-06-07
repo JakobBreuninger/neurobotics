@@ -46,7 +46,7 @@ class ActorNetwork:
 
             # Create the shadow variables, and add ops to maintain moving averages
             # of actor network
-            actor_ema = self.ema_obj.apply(self.actor_variables)
+            self.compute_ema = self.ema_obj.apply(self.actor_variables)
 
             # Create target actor network
             self.map_input_target, self.action_output_target = self.create_target_network(image_size, action_size,
@@ -115,7 +115,7 @@ class ActorNetwork:
 
     def create_target_network(self, image_size, action_size, image_no, ema_obj, actor_variables):
 
-        map_input = tf.placeholder("float", [image_no, image_size, image_size, None])
+        map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
 
         # this must be adjusted if the conv network architecture is changed:
         conv3_output = 7*7*32
@@ -153,14 +153,20 @@ class ActorNetwork:
         # return all ops
         return map_input, action_output
 
+    def update_target(self):
+        self.sess.run(self.compute_ema)
+
+    def evaluate(self, state_batch):
+        return self.sess.run(self.action_output, feed_dict={
+            self.map_input: state_batch
+            })
+
     def train(self, q_gradient_batch, state_batch):
         self.sess.run(self.optimizer, feed_dict={self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})
+        self.update_target()
 
     def get_action(self, state):
         return self.sess.run(self.action_output, feed_dict={self.map_input: [state]})[0]
-
-    def evaluate(self, state_batch):
-        return self.sess.run(self.action_output, feed_dict={self.map_input: state_batch})
 
     def target_evaluate(self, state_batch):
         return self.sess.run(self.action_output_target, feed_dict={self.map_input: state_batch})

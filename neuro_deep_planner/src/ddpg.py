@@ -10,7 +10,7 @@ from actor import ActorNetwork
 REPLAY_BUFFER_SIZE = 10000  # How big can the buffer get
 REPLAY_START_SIZE = 500     # When do we start training
 
-BATCH_SIZE = 50             # How big are our batches
+BATCH_SIZE = 16             # How big are our batches
 
 GAMMA = 0.99                # Discount factor
 
@@ -51,13 +51,15 @@ class DDPG:
 
     def train(self):
 
+        print("training")
         # Sample a random minibatch of N transitions from replay buffer
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
         state_batch = [data[0] for data in minibatch]
         action_batch = [data[1] for data in minibatch]
-        action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
+        #action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
         reward_batch = [data[2] for data in minibatch]
         next_state_batch = [data[3] for data in minibatch]
+        #hi
 
         # Calculate y
         y_batch = []

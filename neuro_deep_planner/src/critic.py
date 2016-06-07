@@ -46,8 +46,8 @@ class CriticNetwork:
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # Create the shadow variables, and add ops to maintain moving averages
-            # of actor network
-            critic_ema = self.ema_obj.apply(self.critic_variables)
+            # of critic network
+            self.compute_ema = self.ema_obj.apply(self.critic_variables)
 
             # create target actor network
             self.map_input_target, self.action_input_target, self.Q_output_target = self.create_target_network(
@@ -167,14 +167,15 @@ class CriticNetwork:
         return map_input, action_input, q_output
 
     def train(self, y_batch, state_batch, action_batch):
-
-        # action = np.transpose([action_batch])
-
         self.sess.run(self.optimizer, feed_dict={
             self.y_input: np.transpose([y_batch]),
             self.map_input: state_batch,
             self.action_input: action_batch
         })
+        self.update_target()
+
+    def update_target(self):
+        self.sess.run(self.compute_ema)
 
     def gradients(self, state_batch, action_batch):
         return self.sess.run(self.action_gradients, feed_dict={

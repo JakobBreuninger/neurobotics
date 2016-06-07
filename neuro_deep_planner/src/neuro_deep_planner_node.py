@@ -7,7 +7,7 @@ from ddpg import DDPG
 
 # Hyper parameters
 ONLINE = True
-MIN_BUFFER_SIZE = 500
+MIN_BUFFER_SIZE = 20
 
 
 def main():
@@ -30,6 +30,7 @@ def main():
 
             # Safe the past state and action + the reward and new state into the replay buffer
             agent.set_experience(ros_handler.state, ros_handler.reward, False)
+            print(agent.get_buffer_size())
 
         elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
 
