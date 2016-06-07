@@ -34,65 +34,37 @@ class ActorNetwork:
             self.sess = tf.InteractiveSession()
 
             # create actor network
-            self.map_input,\
-            self.weights_conv1,\
-            self.biases_conv1,\
-            self.weights_conv2,\
-            self.biases_conv2,\
-            self.weights_conv3,\
-            self.biases_conv3,\
-            self.weights_fully1,\
-            self.biases_fully1,\
-            self.weights_fully2,\
-            self.biases_fully2,\
-            self.weights_final,\
-            self.biases_final,\
+            self. map_input,\
             self.action_output = self.create_network(image_size,action_size, image_no)
 
-            # Create Exponential moving Average Object
-            ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
+
 
             # get all the variables in the actor network
             with tf.variable_scope("actor") as scope:
-                actor_variables = tf.get_collection(tf.GraphKeys.VARIABLES,
+                self.actor_variables = tf.get_collection(tf.GraphKeys.VARIABLES,
                 scope=scope.name)
+
+            # Create Exponential moving Average Object
+            self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # Create the shadow variables, and add ops to maintain moving averages
             # of actor network
-            actor_ema = ema_obj.apply(actor_variables)
+            actor_ema = self.ema_obj.apply(self.actor_variables)
 
             # create target actor network
             self.map_input_target,\
-            self.weights_conv1_target,\
-            self.biases_conv1_target,\
-            self.weights_conv2_target,\
-            self.biases_conv2_target,\
-            self.weights_conv3_target,\
-            self.biases_conv3_target,\
-            self.weights_fully1_target,\
-            self.biases_fully1_target,\
-            self.weights_fully2_target,\
-            self.biases_fully2_target,\
-            self.weights_final_target,\
-            self.biases_final_target,\
             self.action_output_target = self.create_target_network(image_size,
-                action_size,image_no, ema_obj,actor_variables)
+                action_size,image_no, self.ema_obj,self.actor_variables)
 
 
             # Define training rules
             self.q_gradient_input = tf.placeholder("float",[None,action_size])
-            self.parameters = [self.weights_conv1, self.biases_conv1,
-                               self.weights_conv2, self.biases_conv2,
-                               self.weights_conv3, self.biases_conv3,
-                               self.weights_fully1, self.biases_fully1,
-                               self.weights_fully2, self.biases_fully2,
-                               self.weights_final, self.biases_final]
 
-            self.parameters_gradients = tf.gradients(self.action_output, self.parameters,
+            self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables,
                                                      -self.q_gradient_input/batch_size)
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
-                                                                                       self.parameters))
+                                                                                       self.actor_variables))
 
             self.sess.run(tf.initialize_all_variables())
 
@@ -106,23 +78,23 @@ class ActorNetwork:
 
         with tf.variable_scope('actor'):
             #weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
-            weights_conv1 = self.variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
-            biases_conv1 = self.variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            weights_conv1 = self.create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            biases_conv1 = self.create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
 
-            weights_conv2 = self.variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
-            biases_conv2 = self.variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            weights_conv2 = self.create_variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            biases_conv2 = self.create_variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
 
-            weights_conv3 = self.variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
-            biases_conv3 = self.variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            weights_conv3 = self.create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            biases_conv3 = self.create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
-            weights_fully1 = self.variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)
-            biases_fully1 = self.variable([FULLY_LAYER1_SIZE],conv3_output)
+            weights_fully1 = self.create_variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)
+            biases_fully1 = self.create_variable([FULLY_LAYER1_SIZE],conv3_output)
 
-            weights_fully2 = self.variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
-            biases_fully2 = self.variable([FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
+            weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
+            biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
 
-            weights_final = self.variable([FULLY_LAYER2_SIZE, action_size],FULLY_LAYER2_SIZE)
-            biases_final = self.variable([action_size],FULLY_LAYER2_SIZE)
+            weights_final = self.create_variable([FULLY_LAYER2_SIZE, action_size],FULLY_LAYER2_SIZE)
+            biases_final = self.create_variable([action_size],FULLY_LAYER2_SIZE)
 
 
         # reshape image to apply convolution
@@ -144,11 +116,8 @@ class ActorNetwork:
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
         action_output= tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
 
-        # return all ops
-        return map_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_fully1,\
-            biases_fully1,weights_fully2, biases_fully2, weights_final,\
-            biases_final,action_output
+        # return output op
+        return map_input, action_output
 
     def create_target_network(self,image_size,action_size,image_no,ema_obj,actor_variables):
 
@@ -194,19 +163,10 @@ class ActorNetwork:
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        action_output= tf.matmul(fully2, weights_final) + biases_final
+        action_output= tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
 
         # return all ops
-        return map_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_fully1,\
-            biases_fully1,weights_fully2, biases_fully2, weights_final,\
-            biases_final,action_output
-
-
-
-
-
-
+        return map_input, action_output
 
     def train(self,q_gradient_batch,state_batch):
         self.sess.run(self.optimizer,feed_dict={
@@ -217,6 +177,9 @@ class ActorNetwork:
 
 
     def get_action(self,state):
+        print(self.sess.run(self.action_output,feed_dict={
+            self.map_input:[state]
+            })[0])
         return self.sess.run(self.action_output,feed_dict={
             self.map_input:[state]
             })[0]
@@ -232,8 +195,6 @@ class ActorNetwork:
             self.map_input:state_batch
             })
 
-
-
     # f fan-in size
-    def variable(self,shape,f):
+    def create_variable(self,shape,f):
         return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))

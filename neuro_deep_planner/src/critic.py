@@ -34,62 +34,32 @@ class CriticNetwork:
             # create actor network
             self.map_input,\
             self.action_input,\
-            self.weights_conv1,\
-            self.biases_conv1,\
-            self.weights_conv2,\
-            self.biases_conv2,\
-            self.weights_conv3,\
-            self.biases_conv3,\
-            self.weights_actions,\
-            self.weights_fully1,\
-            self.biases_fully1,\
-            self.weights_fully2,\
-            self.biases_fully2,\
-            self.weights_final,\
-            self.biases_final,\
-			self.Q_output = self.create_network(image_size,action_size,image_no)
-
-            # Create Exponential Moing Average Object
-            ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
+            self.Q_output,  = self.create_network(image_size,action_size,image_no)
 
             # get all the variables in the actor network
             with tf.variable_scope("critic") as scope:
-                critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES,
+                self.critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES,
                 scope=scope.name)
+
+            # Create Exponential Moing Average Object
+            self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # Create the shadow variables, and add ops to maintain moving averages
             # of actor network
-            critic_ema = ema_obj.apply(critic_variables)
+            critic_ema = self.ema_obj.apply(self.critic_variables)
 
             # create target actor network
             self.map_input_target,\
             self.action_input_target,\
-            self.weights_conv1_target,\
-            self.biases_conv1_target,\
-            self.weights_conv2_target,\
-            self.biases_conv2_target,\
-            self.weights_conv3_target,\
-            self.biases_conv3_target,\
-            self.weights_actions,\
-            self.weights_fully1_target,\
-            self.biases_fully1_target,\
-            self.weights_fully2_target,\
-            self.biases_fully2_target,\
-            self.weights_final_target,\
-            self.biases_final_target,\
-            self.Q_target_output = self.create_target_network(image_size,
-                action_size,image_no, ema_obj,critic_variables)
+            self.Q_output_target = self.create_target_network(image_size,
+                action_size,image_no, self.ema_obj,self.critic_variables)
 
 
             # L2 Regularization for all Variables
-            self.regularization = \
-            tf.nn.l2_loss(self.weights_conv1)+tf.nn.l2_loss(self.biases_conv1)+\
-            tf.nn.l2_loss(self.weights_conv2)+tf.nn.l2_loss(self.biases_conv2)+\
-            tf.nn.l2_loss(self.weights_conv3)+tf.nn.l2_loss(self.biases_conv3)+\
-            tf.nn.l2_loss(self.weights_actions)+\
-            tf.nn.l2_loss(self.weights_fully1)+tf.nn.l2_loss(self.biases_fully1)+\
-            tf.nn.l2_loss(self.weights_fully2)+tf.nn.l2_loss(self.biases_fully2)+\
-            tf.nn.l2_loss(self.weights_final)+tf.nn.l2_loss(self.biases_final)
+            self.regularization = 0
+            for variable in self.critic_variables:
+                self.regularization = self.regularization + tf.nn.l2_loss(variable)
+
 
             # Define training optimizer
             self.y_input = tf.placeholder("float",[None,1])
@@ -114,24 +84,24 @@ class CriticNetwork:
         conv3_output = 7*7*32
 
         with tf.variable_scope('critic'):
-            weights_conv1 = self.variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
-            biases_conv1 = self.variable([FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
+            weights_conv1 = self.create_variable([RECEIPTIVE_FIELD1, RECEIPTIVE_FIELD1, image_no, FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
+            biases_conv1 = self.create_variable([FILTER1],RECEIPTIVE_FIELD1*RECEIPTIVE_FIELD1)
 
-            weights_conv2 = self.variable([RECEIPTIVE_FIELD2, RECEIPTIVE_FIELD2, FILTER1, FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
-            biases_conv2 = self.variable([FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
+            weights_conv2 = self.create_variable([RECEIPTIVE_FIELD2, RECEIPTIVE_FIELD2, FILTER1, FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
+            biases_conv2 = self.create_variable([FILTER2],RECEIPTIVE_FIELD2*RECEIPTIVE_FIELD2*FILTER1)
 
-            weights_conv3 = self.variable([RECEIPTIVE_FIELD3, RECEIPTIVE_FIELD3, FILTER2, FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
-            biases_conv3 = self.variable([FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
+            weights_conv3 = self.create_variable([RECEIPTIVE_FIELD3, RECEIPTIVE_FIELD3, FILTER2, FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
+            biases_conv3 = self.create_variable([FILTER3],RECEIPTIVE_FIELD3*RECEIPTIVE_FIELD3*FILTER2)
 
-            weights_actions = self.variable([action_size, FULLY_LAYER1_SIZE],action_size)
-            weights_fully1 = self.variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)
-            biases_fully1 = self.variable([FULLY_LAYER1_SIZE],conv3_output)
+            weights_actions = self.create_variable([action_size, FULLY_LAYER1_SIZE],action_size)
+            weights_fully1 = self.create_variable([conv3_output, FULLY_LAYER1_SIZE],conv3_output)
+            biases_fully1 = self.create_variable([FULLY_LAYER1_SIZE],conv3_output)
 
-            weights_fully2 = self.variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
-            biases_fully2 = self.variable([FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
+            weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
+            biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE],FULLY_LAYER1_SIZE)
 
-            weights_final = self.variable([FULLY_LAYER2_SIZE, 1],FULLY_LAYER2_SIZE)
-            biases_final = self.variable([1],FULLY_LAYER2_SIZE)
+            weights_final = self.create_variable([FULLY_LAYER2_SIZE, 1],FULLY_LAYER2_SIZE)
+            biases_final = self.create_variable([1],FULLY_LAYER2_SIZE)
 
 
         # reshape image to apply convolution
@@ -157,10 +127,7 @@ class CriticNetwork:
         Q_output= tf.matmul(fully2, weights_final) + biases_final
 
         # return all ops
-        return map_input,action_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_actions, weights_fully1,\
-            biases_fully1,weights_fully2, biases_fully2, weights_final,\
-            biases_final,Q_output
+        return map_input, action_input, Q_output
 
 
     def create_target_network(self,image_size,action_size,image_no,ema_obj,actor_variables):
@@ -210,13 +177,10 @@ class CriticNetwork:
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) +
                 tf.matmul(action_input, weights_actions) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        Q_target_output= tf.matmul(fully2, weights_final) + biases_final
+        Q_output= tf.matmul(fully2, weights_final) + biases_final
 
         # return all ops
-        return map_input,action_input,weights_conv1,biases_conv1,weights_conv2,\
-            biases_conv2,weights_conv3,biases_conv3, weights_actions, weights_fully1,\
-            biases_fully1,weights_fully2, biases_fully2, weights_final,\
-            biases_final,Q_target_output
+        return map_input, action_input, Q_output
 
 
     def train(self,y_batch,state_batch,action_batch):
@@ -248,5 +212,5 @@ class CriticNetwork:
         })
 
     # f fan-in size
-    def variable(self,shape,f):
+    def create_variable(self,shape,f):
         return tf.Variable(tf.random_uniform(shape,-1/math.sqrt(f),1/math.sqrt(f)))
