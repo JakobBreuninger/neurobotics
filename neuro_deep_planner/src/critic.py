@@ -166,7 +166,7 @@ class CriticNetwork:
         # return all ops
         return map_input, action_input, q_output
 
-    def train(self,y_batch,state_batch,action_batch):
+    def train(self, y_batch, state_batch, action_batch):
         self.sess.run(self.optimizer, feed_dict={
             self.y_input: np.transpose([y_batch]),
             self.map_input: state_batch,
@@ -177,10 +177,10 @@ class CriticNetwork:
     def update_target(self):
         self.sess.run(self.compute_ema)
 
-    def gradients(self,state_batch,action_batch):
-        return self.sess.run(self.action_gradients,feed_dict={
-            self.map_input:state_batch,
-            self.action_input:action_batch
+    def gradients(self, state_batch, action_batch):
+        return self.sess.run(self.action_gradients, feed_dict={
+            self.map_input: state_batch,
+            self.action_input: action_batch
         })[0]
 
     def evaluate(self, state_batch, action_batch):

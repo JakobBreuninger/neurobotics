@@ -115,9 +115,7 @@ class ActorNetwork:
 
     def create_target_network(self, image_size, action_size, image_no, ema_obj, actor_variables):
 
-
-        map_input = tf.placeholder("float",[None,image_size,image_size,image_no])
-
+        map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
 
         # this must be adjusted if the conv network architecture is changed:
         conv3_output = 7*7*32
@@ -158,9 +156,9 @@ class ActorNetwork:
     def update_target(self):
         self.sess.run(self.compute_ema)
 
-    def evaluate(self,state_batch):
-        return self.sess.run(self.action_output,feed_dict={
-            self.map_input:state_batch
+    def evaluate(self, state_batch):
+        return self.sess.run(self.action_output, feed_dict={
+            self.map_input: state_batch
             })
 
     def train(self, q_gradient_batch, state_batch):
