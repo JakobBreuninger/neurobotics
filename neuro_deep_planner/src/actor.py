@@ -64,12 +64,14 @@ class ActorNetwork:
 
             self.sess.run(tf.initialize_all_variables())
 
+            # Define fully connected layer size
+            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
+                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
+            self.fully_size = (final_conv_height**2) * FILTER3
+
     def create_network(self, image_size, action_size, image_no):
 
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
-
-        # this must be adjusted if the conv network architecture is changed:
-        conv3_output = 7*7*32
 
         with tf.variable_scope('actor'):
 
@@ -85,8 +87,8 @@ class ActorNetwork:
                                                  RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
             biases_conv3 = self.create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
-            weights_fully1 = self.create_variable([conv3_output, FULLY_LAYER1_SIZE], conv3_output)
-            biases_fully1 = self.create_variable([FULLY_LAYER1_SIZE], conv3_output)
+            weights_fully1 = self.create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
+            biases_fully1 = self.create_variable([FULLY_LAYER1_SIZE], self.fully_size)
 
             weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
             biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
@@ -103,7 +105,7 @@ class ActorNetwork:
                            biases_conv3)
 
         # reshape output tensor to a rank 1 tensor
-        conv3_flat = tf.reshape(conv3, [-1, conv3_output])
+        conv3_flat = tf.reshape(conv3, [-1, self.fully_size])
 
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
@@ -116,9 +118,6 @@ class ActorNetwork:
     def create_target_network(self, image_size, action_size, image_no, ema_obj, actor_variables):
 
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
-
-        # this must be adjusted if the conv network architecture is changed:
-        conv3_output = 7*7*32
 
         with tf.variable_scope('actor_target'):
             weights_conv1 = ema_obj.average(actor_variables[0])
@@ -143,7 +142,7 @@ class ActorNetwork:
                            biases_conv3)
 
         # Reshape output tensor to a rank 1 tensor
-        conv3_flat = tf.reshape(conv3, [-1, conv3_output])
+        conv3_flat = tf.reshape(conv3, [-1, self.fully_size])
 
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
