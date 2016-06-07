@@ -4,6 +4,7 @@ import rospy
 
 from state_visualizer import CostmapVisualizer
 
+
 def main():
 
     rospy.init_node("neuro_input_visualizer", anonymous=False)

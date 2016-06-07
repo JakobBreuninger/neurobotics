@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 import matplotlib.pyplot as plt
+
 from collections import deque
+
 import rospy
+from neuro_local_planner_wrapper.msg import Transition
+
 import numpy as np
-from nav_msgs.msg import OccupancyGrid
 
 
 class CostmapVisualizer:
@@ -21,22 +24,29 @@ class CostmapVisualizer:
         plt.axis('off')
         self.im_im.axes.figure.canvas.draw()
 
-        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/constcutive_costmaps", OccupancyGrid,
+        self.sub_im = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                        self.im_callback)
+
+        self.current_state_rep = Transition()
+        print self.current_state_rep
 
     def im_callback(self, data):
 
-        width = data.info.width
-        height = data.info.height
+        width = data.width
+        height = data.height
 
-        fake_data = np.asarray([(100 - data) for data in data.data])
-        # fake_data = np.hstack((fake_data, fake_data, fake_data, fake_data))
+        data_1d = np.asarray([(100 - data) for data in data.state_representation])
 
-        data_3d = fake_data.reshape(4, 80, 80).swapaxes(1, 2)
+        data_3d = data_1d.reshape(4, 84, 84).swapaxes(1, 2)
 
-        divider = np.full((80, 10), 75)
+        data_3d = np.rollaxis(data_3d, 0, 3)
 
-        stacked_costmap = np.hstack((data_3d[0], divider, data_3d[1], divider, data_3d[2], divider, data_3d[3]))
+        divider = np.full((84, 10), 75)
+
+        stacked_costmap = np.hstack((data_3d[:, :, 0], divider,
+                                     data_3d[:, :, 1], divider,
+                                     data_3d[:, :, 2], divider,
+                                     data_3d[:, :, 3]))
 
         self.im_data.append(stacked_costmap)
 

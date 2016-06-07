@@ -10,7 +10,7 @@ from actor import ActorNetwork
 REPLAY_BUFFER_SIZE = 10000  # How big can the buffer get
 REPLAY_START_SIZE = 500     # When do we start training
 
-BATCH_SIZE = 50             # How big are our batches
+BATCH_SIZE = 16             # How big are our batches
 
 GAMMA = 0.99                # Discount factor
 
@@ -24,15 +24,23 @@ class DDPG:
     def __init__(self):
 
         # Hardcode input size and action size
-        self.height = 80
+        self.height = 84
+        self.width = self.height
         self.depth = 4
         self.action_dim = 2
+
+        # Initialize the current action and the old action for setting experiences
+        self.action = np.zeros((2, 1), dtype='float')
+        self.old_action = np.zeros((2, 1), dtype='float')
+
+        # Initialize the old state for setting experiences
+        self.old_state = np.zeros((self.depth, self.width, self.height), dtype='float')
 
         # Initialize actor and critic networks
         self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
 
-        # initialize replay buffer
+        # Initialize replay buffer
         self.replay_buffer = deque()
 
         # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
@@ -43,13 +51,15 @@ class DDPG:
 
     def train(self):
 
+        print("training")
         # Sample a random minibatch of N transitions from replay buffer
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
         state_batch = [data[0] for data in minibatch]
         action_batch = [data[1] for data in minibatch]
-        action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
+        #action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
         reward_batch = [data[2] for data in minibatch]
         next_state_batch = [data[3] for data in minibatch]
+        #hi
 
         # Calculate y
         y_batch = []
@@ -76,19 +86,23 @@ class DDPG:
     def get_action(self, state):
 
         # Select action a_t according to the current policy and exploration noise
-        action = self.actor_network.get_action(state) + self.exploration_noise.noise()
+        self.action = self.actor_network.get_action(state) + self.exploration_noise.noise()
 
         # TODO: Should we clip these values?
-        return action
+        return self.action
 
     def get_buffer_size(self):
 
         return len(self.replay_buffer)
 
-    def set_experience(self, state, action, reward, next_state, done):
+    def set_experience(self, state, reward, done):
 
         # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
-        self.replay_buffer.append((state, action, reward, next_state, done))
+        self.replay_buffer.append((self.old_state, self.old_action, reward, state, done))
+
+        # Safe old state and old action for next experience
+        self.old_state = state
+        self.old_action = self.action
 
         # Update time step
         self.time_step += 1

@@ -54,8 +54,6 @@ namespace neuro_local_planner_wrapper
 
             action_sub_ = private_nh.subscribe("/neuro_deep_planner/action", 1000, &NeuroLocalPlannerWrapper::callbackAction, this);
 
-
-
             // Setup tf
             tf_ = tf;
 
@@ -75,7 +73,7 @@ namespace neuro_local_planner_wrapper
             setZeroAction();
 
             // Should we use the dwa planner?
-            existing_plugin_ = true;
+            existing_plugin_ = false;
             std::string local_planner = "dwa_local_planner/DWAPlannerROS";
 
             // If we want to, lets load a local planner plugin to do the work for us
