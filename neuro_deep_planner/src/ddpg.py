@@ -59,6 +59,7 @@ class DDPG:
         #action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
         reward_batch = [data[2] for data in minibatch]
         next_state_batch = [data[3] for data in minibatch]
+        #hi
 
         # Calculate y
         y_batch = []
