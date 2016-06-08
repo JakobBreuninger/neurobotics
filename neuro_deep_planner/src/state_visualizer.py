@@ -35,20 +35,21 @@ class CostmapVisualizer:
         width = data.width
         height = data.height
 
-        data_1d = np.asarray([(100 - data) for data in data.state_representation])
+        if not data.is_episode_finished:
+            data_1d = np.asarray([(100 - data) for data in data.state_representation])
 
-        data_3d = data_1d.reshape(4, 84, 84).swapaxes(1, 2)
+            data_3d = data_1d.reshape(4, 84, 84).swapaxes(1, 2)
 
-        data_3d = np.rollaxis(data_3d, 0, 3)
+            data_3d = np.rollaxis(data_3d, 0, 3)
 
-        divider = np.full((84, 10), 75)
+            divider = np.full((84, 10), 75)
 
-        stacked_costmap = np.hstack((data_3d[:, :, 0], divider,
-                                     data_3d[:, :, 1], divider,
-                                     data_3d[:, :, 2], divider,
-                                     data_3d[:, :, 3]))
+            stacked_costmap = np.hstack((data_3d[:, :, 0], divider,
+                                         data_3d[:, :, 1], divider,
+                                         data_3d[:, :, 2], divider,
+                                         data_3d[:, :, 3]))
 
-        self.im_data.append(stacked_costmap)
+            self.im_data.append(stacked_costmap)
 
     def run(self):
 

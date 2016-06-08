@@ -76,7 +76,6 @@ class CriticNetwork:
             self.sess.run(tf.initialize_all_variables())
 
 
-
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
         action_input = tf.placeholder("float", [None, action_size], name="action_input")

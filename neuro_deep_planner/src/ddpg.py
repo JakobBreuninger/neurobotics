@@ -15,8 +15,8 @@ BATCH_SIZE = 3             # How big are our batches
 GAMMA = 0.99                # Discount factor
 
 MU = 0.0                    # Center value of noise
-THETA = 0.08                # Specifies how strong noise values are pulled towards mu
-SIGMA = 0.04                # Variance of noise
+THETA = 0.5                 # Specifies how strong noise values are pulled towards mu
+SIGMA = 0.1                 # Variance of noise
 
 
 class DDPG:
@@ -86,8 +86,17 @@ class DDPG:
     def get_action(self, state):
 
         # Select action a_t according to the current policy and exploration noise
-        self.action = self.actor_network.get_action(state) + self.exploration_noise.noise()
+        network_action = self.actor_network.get_action(state)
+        noise_action = self.exploration_noise.noise()
+        self.action = network_action + noise_action
+
+        print "network action:"
+        print network_action
+
+        print "noise_action:"
+        print noise_action
         # TODO: Should we clip or limit these values?
+
         return self.action
 
     def get_buffer_size(self):

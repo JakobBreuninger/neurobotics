@@ -32,10 +32,10 @@ def main():
             agent.set_experience(ros_handler.state, ros_handler.reward, ros_handler.is_episode_finished)
             print(agent.get_buffer_size())
 
-        elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
+        #elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
 
             # Train the network!
-            agent.train()
+            #agent.train()
 
 
 if __name__ == '__main__':

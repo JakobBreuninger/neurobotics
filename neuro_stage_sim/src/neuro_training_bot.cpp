@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     //move_base_pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 
     // Make sure that the global planner is aware of the new position
-    ros::Rate r(0.1);
+    ros::Rate r(0.05);
     r.sleep();
 
     // Send an initial goal position to move_base

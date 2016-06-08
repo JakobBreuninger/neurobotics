@@ -40,7 +40,6 @@ class ActorNetwork:
                                  RECEPTIVE_FIELD3)/STRIDE3 + 1
             self.fully_size = (final_conv_height**2) * FILTER3
 
-
             # create actor network
             self.map_input, self.action_output = self.create_network(image_size, action_size, image_no)
 
