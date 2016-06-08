@@ -59,7 +59,7 @@ class CriticNetwork:
                 self.regularization = self.regularization + tf.nn.l2_loss(variable)
 
             # Define training optimizer
-            self.y_input = tf.placeholder("float", [None, 1])
+            self.y_input = tf.placeholder("float", [None, 1], name="y_input")
             self.td_error = tf.pow(self.Q_output-self.y_input, 2)/batch_size
             self.loss = self.td_error + self.regularization
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
@@ -77,7 +77,7 @@ class CriticNetwork:
 
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
-        action_input = tf.placeholder("float", [None, action_size])
+        action_input = tf.placeholder("float", [None, action_size], name="action_input")
 
         with tf.variable_scope('critic'):
 
@@ -168,9 +168,7 @@ class CriticNetwork:
 
     def train(self, y_batch, state_batch, action_batch):
         self.sess.run(self.optimizer, feed_dict={
-            self.y_input: np.transpose([y_batch]),
-            self.map_input: state_batch,
-            self.action_input: action_batch
+            self.y_input: y_batch, self.map_input: state_batch, self.action_input: action_batch
         })
         self.update_target()
 
@@ -184,9 +182,7 @@ class CriticNetwork:
         })[0]
 
     def evaluate(self, state_batch, action_batch):
-        return self.sess.run(self.Q_output, feed_dict={
-            self.map_input_target: state_batch,
-            self.action_input_target: action_batch
+        return self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch, self.action_input: action_batch
         })
 
     def target_evaluate(self, state_batch, action_batch):

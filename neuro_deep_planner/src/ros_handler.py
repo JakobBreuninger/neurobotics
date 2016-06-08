@@ -57,14 +57,6 @@ class ROSHandler:
         # Generate msg output
         vel_cmd = Twist(Vector3(action[0],0,0),Vector3(0,0,action[1]))
 
-        '''vel_cmd.linear[0] = 1#action[0]
-        vel_cmd.linear[1] = 0.0
-        vel_cmd.linear[2] = 0.0
-
-        vel_cmd.angular[0] = 1#0.0
-        vel_cmd.angular[1] = 0.0
-        vel_cmd.angular[3] = action[1]'''
-
         # Send the action back
         self.__pub.publish(vel_cmd)
 

@@ -166,7 +166,7 @@ class ActorNetwork:
         return self.sess.run(self.action_output, feed_dict={self.map_input: [state]})[0]
 
     def target_evaluate(self, state_batch):
-        return self.sess.run(self.action_output_target, feed_dict={self.map_input: state_batch})
+        return self.sess.run(self.action_output_target, feed_dict={self.map_input_target: state_batch})
 
     # f fan-in size
     def create_variable(self, shape, f):
