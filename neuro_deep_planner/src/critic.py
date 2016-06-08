@@ -28,6 +28,8 @@ TARGET_DECAY = 0.001         # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
+SUMMARIES_DIR = '/tmp/asdf'
+
 
 class CriticNetwork:
 
@@ -35,6 +37,7 @@ class CriticNetwork:
         self.graph = tf.Graph()
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
+            self.train_counter = 1
 
             # Define fully connected layer size
             final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
@@ -69,12 +72,16 @@ class CriticNetwork:
             self.td_error = tf.pow(self.Q_output-self.y_input, 2)/batch_size
             self.loss = self.td_error + self.regularization
 
+            tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
+
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
-            self.sess.run(tf.initialize_all_variables())
+            self.merged_summaries = tf.merge_all_summaries()
+            self.summary_writer = tf.train.SummaryWriter('data')
 
+            self.sess.run(tf.initialize_all_variables())
 
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
@@ -172,6 +179,13 @@ class CriticNetwork:
             self.y_input: y_batch, self.map_input: state_batch, self.action_input: action_batch
         })
         self.update_target()
+        if (self.train_counter % 100) == 0:
+            print "im trying to write a summary"
+            summary = self.sess.run(self.merged_summaries, feed_dict={self.y_input: y_batch, self.map_input: state_batch,
+                                                            self.action_input: action_batch})
+            self.summary_writer.add_summary(summary, self.train_counter)
+        self.train_counter += 1
+
 
     def update_target(self):
         self.sess.run(self.compute_ema)
