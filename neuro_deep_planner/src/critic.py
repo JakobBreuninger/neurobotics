@@ -183,8 +183,7 @@ class CriticNetwork:
         })[0]
 
     def evaluate(self, state_batch, action_batch):
-        return self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch, self.action_input: action_batch
-        })
+        return self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch, self.action_input: action_batch})
 
     def target_evaluate(self, state_batch, action_batch):
         return self.sess.run(self.Q_output_target, feed_dict={
