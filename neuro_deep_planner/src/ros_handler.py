@@ -47,7 +47,7 @@ class ROSHandler:
         self.reward = transition_msg.reward
 
         # Check if episode is done or not
-        self.is_episode_finished = transition_msg.is_episode_finished
+        self.is_episode_finished = False # transition_msg.is_episode_finished
 
         # We have received a new msg
         self.__new_msg_flag = True
