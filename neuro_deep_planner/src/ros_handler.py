@@ -51,6 +51,10 @@ class ROSHandler:
                 swapaxes(1, 2)
             self.state = np.rollaxis(temp_state, 0, 3)
 
+            # Normalize!
+            self.state = self.state.astype(float)
+            self.state = np.divide(self.state, 100.0)
+
         # We have received a new msg
         self.__new_msg_flag = True
 

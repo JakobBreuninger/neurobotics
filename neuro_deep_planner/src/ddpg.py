@@ -7,15 +7,15 @@ from actor import ActorNetwork
 
 
 # Hyper Parameters:
-REPLAY_BUFFER_SIZE = 10000  # How big can the buffer get
-REPLAY_START_SIZE = 5     # When do we start training
+REPLAY_BUFFER_SIZE = 1000000 # How big can the buffer get
+REPLAY_START_SIZE = 500      # When do we start training
 
-BATCH_SIZE = 3            # How big are our batches
+BATCH_SIZE = 16              # How big are our batches
 
-GAMMA = 0.99                # Discount factor
+GAMMA = 0.99                 # Discount factor
 
-MU = 0.0                    # Center value of noise
-THETA = 0.1                 # Specifies how strong noise values are pulled towards mu
+MU = 0.0                     # Center value of noise
+THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
 SIGMA = 0.05                 # Variance of noise
 
 
@@ -48,12 +48,11 @@ class DDPG:
         # Flag: doont learn the first experience
         self.first_experience = True
 
-
     def train(self):
 
         if self.get_buffer_size() > REPLAY_START_SIZE:
-            if (self.time_step % 10) == 0:
-                print("training step %d", self.time_step)
+            if (self.time_step % 100) == 0:
+                print("training step: ", self.time_step)
 
             # Sample a random minibatch of N transitions from replay buffer
             minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
@@ -68,13 +67,12 @@ class DDPG:
             # Calculate y
             y_batch = []
             next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
-
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
             for i in range(0, BATCH_SIZE):
                 is_episode_finished = minibatch[i][4]
                 if is_episode_finished:
-                    y_batch.append(reward_batch[i])
+                    y_batch.append([float(reward_batch[i])])
                 else:
                     y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
@@ -96,13 +94,14 @@ class DDPG:
         noise_action = self.exploration_noise.noise()
         self.action = network_action + noise_action
 
-        print "network action:"
-        print network_action
+        # Print action
+        if (((self.time_step % 100) == 0) & (self.get_buffer_size() > REPLAY_START_SIZE)):
+            print "network action:"
+            print network_action
+            print "noise_action:"
+            print noise_action
 
-        print "noise_action:"
-        print noise_action
         # TODO: Should we clip or limit these values?
-
         return self.action
 
     def get_buffer_size(self):
