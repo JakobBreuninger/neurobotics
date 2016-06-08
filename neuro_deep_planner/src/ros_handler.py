@@ -20,10 +20,11 @@ class ROSHandler:
         self.state = np.zeros((self.width, self.height, self.depth), dtype='float')
 
         self.reward = 0.0
+        self.is_episode_finished = False
 
         self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                       self.input_callback)
-        self.__pub = rospy.Publisher("action", Twist, queue_size=10)
+        self.__pub = rospy.Publisher("neuro_deep_planner/action", Twist, queue_size=10)
 
         self.__new_msg_flag = False
 
@@ -38,16 +39,17 @@ class ROSHandler:
             self.state = np.zeros((self.depth, self.width, self.height), dtype='float')
             self.__init = True
 
-        # Lets update the new costmap its possible that we need to switch some axes here...
-        temp_state = np.asarray(transition_msg.state_representation).reshape(self.depth, self.height, self.width).\
-            swapaxes(1, 2)
-        self.state = np.rollaxis(temp_state, 0, 3)
-
         # Lets update the new reward
         self.reward = transition_msg.reward
 
         # Check if episode is done or not
         self.is_episode_finished = transition_msg.is_episode_finished
+
+        # Lets update the new costmap its possible that we need to switch some axes here...
+        if not self.is_episode_finished:
+            temp_state = np.asarray(transition_msg.state_representation).reshape(self.depth, self.height, self.width).\
+                swapaxes(1, 2)
+            self.state = np.rollaxis(temp_state, 0, 3)
 
         # We have received a new msg
         self.__new_msg_flag = True

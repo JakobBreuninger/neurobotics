@@ -145,13 +145,14 @@ namespace neuro_local_planner_wrapper
     bool NeuroLocalPlannerWrapper::computeVelocityCommands(geometry_msgs::Twist& cmd_vel)
     {
         // -------- TODO: to_delete if we are getting actions from TensorFlow node
-        if (is_running_) {
-            geometry_msgs::Twist action;
-            callbackAction(action);
-        } // ---------
+        //if (is_running_)
+        //{
+        //    callbackAction(cmd_vel);
+        //} // ---------
 
+        // ROS_ERROR("computeVelocityCommands");
         // if we want to use the setup move_base provides
-        //cmd_vel = action_;
+        // cmd_vel = action_;
 
         return true;
     }
@@ -177,7 +178,7 @@ namespace neuro_local_planner_wrapper
         // info
         customized_costmap_.info.width = costmap_->getSizeInCellsX(); // e.g. 80
         customized_costmap_.info.height = costmap_->getSizeInCellsY(); // e.g. 80
-        customized_costmap_.info.resolution = costmap_->getResolution(); // e.g. 0.05
+        customized_costmap_.info.resolution = (float)costmap_->getResolution(); // e.g. 0.05
         customized_costmap_.info.origin.position.x = -costmap_->getSizeInMetersX()/2.0; // e.g.-1.95
         customized_costmap_.info.origin.position.y = -costmap_->getSizeInMetersY()/2.0; // e.g.-1.95
         customized_costmap_.info.origin.position.z = 0.0;
@@ -259,7 +260,7 @@ namespace neuro_local_planner_wrapper
 
         int cost = costmap_->getCost(robot_x, robot_y);
 
-        if(cost >= 253)
+        if(cost >= 200)
         {
             //std::cout << cost << std::endl;
             ROS_INFO("We crashed!");
@@ -369,7 +370,7 @@ namespace neuro_local_planner_wrapper
                 transition_msg_.header.stamp = laser_scan.header.stamp;
                 transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
 
-                transition_msg_.is_episode_over = true;
+                transition_msg_.is_episode_finished = true;
 
                 transition_msg_.reward = reward;
 
@@ -404,7 +405,7 @@ namespace neuro_local_planner_wrapper
                     transition_msg_.header.stamp = customized_costmap_.header.stamp;
                     transition_msg_.header.frame_id = customized_costmap_.header.frame_id;
 
-                    transition_msg_.is_episode_over = false;
+                    transition_msg_.is_episode_finished = false;
 
                     transition_msg_.reward = reward;
 

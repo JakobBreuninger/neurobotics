@@ -35,6 +35,11 @@ class CriticNetwork:
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
 
+            # Define fully connected layer size
+            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
+                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
+            self.fully_size = (final_conv_height**2) * FILTER3
+
             # create actor network
             self.map_input, self.action_input, self.Q_output = self.create_network(image_size, action_size, image_no)
 
@@ -68,12 +73,6 @@ class CriticNetwork:
             # self.action_gradients = [self.action_gradients_v[0]/tf.to_float(tf.shape(self.action_gradients_v[0])[0])]
 
             self.sess.run(tf.initialize_all_variables())
-
-            # Define fully connected layer size
-            # Define fully connected layer size
-            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
-                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
-            self.fully_size = (final_conv_height**2) * FILTER3
 
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])

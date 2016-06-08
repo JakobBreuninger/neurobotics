@@ -4,7 +4,7 @@ import numpy.random as nr
 
 class OUNoise:
 
-    def __init__(self, action_dimension, mu=0, theta=0.08, sigma=0.04):
+    def __init__(self, action_dimension, mu=0, theta=0.5, sigma=0.1):
         self.action_dimension = action_dimension
         self.mu = mu
         self.theta = theta

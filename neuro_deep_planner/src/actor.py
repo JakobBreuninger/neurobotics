@@ -33,6 +33,11 @@ class ActorNetwork:
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
 
+            # Define fully connected layer size
+            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
+                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
+            self.fully_size = (final_conv_height**2) * FILTER3
+
             # create actor network
             self.map_input, self.action_output = self.create_network(image_size, action_size, image_no)
 
@@ -63,11 +68,6 @@ class ActorNetwork:
                                                                                        self.actor_variables))
 
             self.sess.run(tf.initialize_all_variables())
-
-            # Define fully connected layer size
-            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
-                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
-            self.fully_size = (final_conv_height**2) * FILTER3
 
     def create_network(self, image_size, action_size, image_no):
 
