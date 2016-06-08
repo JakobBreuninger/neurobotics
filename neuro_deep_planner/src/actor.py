@@ -156,9 +156,7 @@ class ActorNetwork:
         self.sess.run(self.compute_ema)
 
     def evaluate(self, state_batch):
-        return self.sess.run(self.action_output, feed_dict={
-            self.map_input: state_batch
-            })
+        return self.sess.run(self.action_output, feed_dict={self.map_input: state_batch})
 
     def train(self, q_gradient_batch, state_batch):
         self.sess.run(self.optimizer, feed_dict={self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})

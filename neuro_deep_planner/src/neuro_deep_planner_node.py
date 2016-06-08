@@ -29,7 +29,7 @@ def main():
             ros_handler.publish_action(agent.get_action(ros_handler.state))
 
             # Safe the past state and action + the reward and new state into the replay buffer
-            agent.set_experience(ros_handler.state, ros_handler.reward, False)
+            agent.set_experience(ros_handler.state, ros_handler.reward, ros_handler.is_episode_finished)
             print(agent.get_buffer_size())
 
         elif agent.get_buffer_size() > MIN_BUFFER_SIZE:
