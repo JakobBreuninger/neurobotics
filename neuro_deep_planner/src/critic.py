@@ -28,7 +28,7 @@ TARGET_DECAY = 0.001         # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
-SUMMARIES_DIR = '~/catkin_ws/src/neuro_deep_planner/data'
+SUMMARIES_DIR = '/tmp/asdf'
 
 
 class CriticNetwork:
@@ -79,7 +79,7 @@ class CriticNetwork:
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
             self.merged_summaries = tf.merge_all_summaries()
-            self.summary_writer = tf.train.SummaryWriter(SUMMARIES_DIR)
+            self.summary_writer = tf.train.SummaryWriter('data')
 
             self.sess.run(tf.initialize_all_variables())
 
@@ -179,7 +179,8 @@ class CriticNetwork:
             self.y_input: y_batch, self.map_input: state_batch, self.action_input: action_batch
         })
         self.update_target()
-        if (self.train_counter % 1000) == 0:
+        if (self.train_counter % 100) == 0:
+            print "im trying to write a summary"
             summary = self.sess.run(self.merged_summaries, feed_dict={self.y_input: y_batch, self.map_input: state_batch,
                                                             self.action_input: action_batch})
             self.summary_writer.add_summary(summary, self.train_counter)
