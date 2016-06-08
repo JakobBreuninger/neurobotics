@@ -24,6 +24,8 @@ LEARNING_RATE = 0.0001  # standard learning rate
 
 TARGET_DECAY = 0.001    # for target networks
 
+FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
+
 
 class ActorNetwork:
 
@@ -69,6 +71,7 @@ class ActorNetwork:
 
             self.sess.run(tf.initialize_all_variables())
 
+
     def create_network(self, image_size, action_size, image_no):
 
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
@@ -93,8 +96,8 @@ class ActorNetwork:
             weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
             biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
 
-            weights_final = self.create_variable([FULLY_LAYER2_SIZE, action_size], FULLY_LAYER2_SIZE)
-            biases_final = self.create_variable([action_size], FULLY_LAYER2_SIZE)
+            weights_final = self.create_variable_final([FULLY_LAYER2_SIZE, action_size])
+            biases_final = self.create_variable_final([action_size])
 
         # 3 convolutional layers
         conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1], padding='VALID') +
@@ -171,3 +174,6 @@ class ActorNetwork:
     # f fan-in size
     def create_variable(self, shape, f):
         return tf.Variable(tf.random_uniform(shape, -1/math.sqrt(f), 1/math.sqrt(f)))
+
+    def create_variable_final(self, shape):
+        return tf.Variable(tf.random_uniform(shape, -FINAL_WEIGHT_INIT, FINAL_WEIGHT_INIT))

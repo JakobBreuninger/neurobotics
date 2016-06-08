@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import math
 
-
 # Params of fully connected layers
 FULLY_LAYER1_SIZE = 200
 FULLY_LAYER2_SIZE = 200
@@ -26,6 +25,8 @@ LEARNING_RATE = 0.0001       # standard learning rate
 REGULARIZATION_DECAY = 0.01  # for L2 Regularization
 
 TARGET_DECAY = 0.001         # for target networks
+
+FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
 
 class CriticNetwork:
@@ -67,12 +68,13 @@ class CriticNetwork:
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
             self.td_error = tf.pow(self.Q_output-self.y_input, 2)/batch_size
             self.loss = self.td_error + self.regularization
+
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
-            # self.action_gradients = [self.action_gradients_v[0]/tf.to_float(tf.shape(self.action_gradients_v[0])[0])]
 
             self.sess.run(tf.initialize_all_variables())
+
 
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
@@ -99,8 +101,8 @@ class CriticNetwork:
             weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
             biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
 
-            weights_final = self.create_variable([FULLY_LAYER2_SIZE, 1], FULLY_LAYER2_SIZE)
-            biases_final = self.create_variable([1], FULLY_LAYER2_SIZE)
+            weights_final = self.create_variable_final([FULLY_LAYER2_SIZE, 1])
+            biases_final = self.create_variable_final([1])
 
         # 3 convolutional layers
         conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1], padding='VALID') +
@@ -193,3 +195,6 @@ class CriticNetwork:
     # f fan-in size
     def create_variable(self, shape, f):
         return tf.Variable(tf.random_uniform(shape, -1/math.sqrt(f), 1/math.sqrt(f)))
+
+    def create_variable_final(self, shape):
+        return tf.Variable(tf.random_uniform(shape, -FINAL_WEIGHT_INIT, FINAL_WEIGHT_INIT))
