@@ -30,13 +30,9 @@ class DDPG:
         self.action_dim = 2
 
         # Initialize the current action and the old action for setting experiences
-        self.action = np.zeros((2, 1), dtype='float')
-        self.old_action = np.zeros((2), dtype='float')
+        self.old_action = np.ones(2, dtype='float')
 
-        # Initialize the old state for setting experiences
-        self.old_state = np.zeros((self.depth, self.width, self.height), dtype='float')
-
-        # Initialize actor and critic networks
+         # Initialize actor and critic networks
         self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
 
@@ -48,6 +44,9 @@ class DDPG:
 
         # Initialize time step
         self.time_step = 0
+
+        # Flag: doont learn the first experience
+        self.first_experience = True
 
 
     def train(self):
@@ -76,24 +75,6 @@ class DDPG:
             else:
                 y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
-        # Update critic by minimizing the loss L
-        print "action_batch:"
-        print action_batch
-        print "type:"
-        print type(action_batch[0])
-        print type(action_batch[1])
-        print type(action_batch[2])
-        print "stack:"
-        action_batch = np.vstack([x for x in action_batch])
-        print action_batch
-        print "type after stack:"
-        print type(action_batch[0])
-        print type(action_batch[1])
-        print type(action_batch[2])
-        print "type data:"
-        print type(action_batch[0][0])
-        print type(action_batch[1][0])
-        print type(action_batch[2][0])
         self.critic_network.train(y_batch, state_batch, action_batch)
 
         # Update the actor policy using the sampled gradient:
@@ -124,9 +105,11 @@ class DDPG:
 
     def set_experience(self, state, reward, is_episode_finished):
 
-        # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
-        self.replay_buffer.append((self.old_state, self.old_action, reward, state, is_episode_finished))
-
+        if self.first_experience:
+            self.first_experience = False
+        else:
+            # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
+            self.replay_buffer.append((self.old_state, self.old_action, reward, state, is_episode_finished))
         # Safe old state and old action for next experience
         self.old_state = state
         self.old_action = self.action

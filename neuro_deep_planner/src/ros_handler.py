@@ -43,7 +43,7 @@ class ROSHandler:
         self.reward = transition_msg.reward
 
         # Check if episode is done or not
-        self.is_episode_finished = transition_msg.is_episode_finished
+        self.is_episode_finished = False # transition_msg.is_episode_finished
 
         # Lets update the new costmap its possible that we need to switch some axes here...
         if not self.is_episode_finished:
