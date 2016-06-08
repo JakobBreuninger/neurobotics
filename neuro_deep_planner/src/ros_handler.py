@@ -14,8 +14,8 @@ class ROSHandler:
         # Initially assumed Input size, since init is false these values will be updated with the first received msg
         self.__init = False
         self.depth = 4
-        self.height = 80
-        self.width = 80
+        self.height = 84
+        self.width = 84
 
         self.state = np.zeros((self.width, self.height, self.depth), dtype='float')
 
@@ -23,7 +23,7 @@ class ROSHandler:
 
         self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
                                       self.input_callback)
-        self.__pub = rospy.Publisher("/Full/Path/Goes/Here", Twist, queue_size=10)
+        self.__pub = rospy.Publisher("action", Twist, queue_size=10)
 
         self.__new_msg_flag = False
 
@@ -39,11 +39,15 @@ class ROSHandler:
             self.__init = True
 
         # Lets update the new costmap its possible that we need to switch some axes here...
-        temp_state = np.asarray(transition_msg.state_representation).reshape(4, 84, 84).swapaxes(1, 2)
+        temp_state = np.asarray(transition_msg.state_representation).reshape(self.depth, self.height, self.width).\
+            swapaxes(1, 2)
         self.state = np.rollaxis(temp_state, 0, 3)
 
         # Lets update the new reward
         self.reward = transition_msg.reward
+
+        # Check if episode is done or not
+        self.is_episode_finished = transition_msg.is_episode_finished
 
         # We have received a new msg
         self.__new_msg_flag = True

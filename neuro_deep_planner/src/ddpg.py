@@ -40,8 +40,8 @@ class DDPG:
         self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
 
-        # Initialize replay buffer
-        self.replay_buffer = deque()
+        # Initialize replay buffer (ring buffer with max length)
+        self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
 
         # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
         self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
@@ -55,12 +55,13 @@ class DDPG:
         print("training")
         # Sample a random minibatch of N transitions from replay buffer
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-        state_batch = ([data[0] for data in minibatch])
 
-        action_batch = ([data[1] for data in minibatch])
-        #action_batch = np.resize(action_batch, [BATCH_SIZE, 2])
-        reward_batch = ([data[2] for data in minibatch])
-        next_state_batch = ([data[3] for data in minibatch])
+        state_batch = [data[0] for data in minibatch]
+        action_batch = [data[1] for data in minibatch]
+        # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
+        reward_batch = [data[2] for data in minibatch]
+        next_state_batch = [data[3] for data in minibatch]
+
 
         # Calculate y
         y_batch = []
@@ -69,8 +70,8 @@ class DDPG:
         q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
         for i in range(0, BATCH_SIZE):
-            done = minibatch[i][4]
-            if done:
+            is_episode_finished = minibatch[i][4]
+            if is_episode_finished:
                 y_batch.append(reward_batch[i])
             else:
                 y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
@@ -101,23 +102,21 @@ class DDPG:
 
         self.actor_network.train(q_gradient_batch, state_batch)
 
-        # Update the target networks TODO: DOit
-
     def get_action(self, state):
 
         # Select action a_t according to the current policy and exploration noise
         self.action = self.actor_network.get_action(state) + self.exploration_noise.noise()
-        # TODO: Should we clip these values?
+        # TODO: Should we clip or limit these values?
         return self.action
 
     def get_buffer_size(self):
 
         return len(self.replay_buffer)
 
-    def set_experience(self, state, reward, done):
+    def set_experience(self, state, reward, is_episode_finished):
 
         # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
-        self.replay_buffer.append((self.old_state, self.old_action, reward, state, done))
+        self.replay_buffer.append((self.old_state, self.old_action, reward, state, is_episode_finished))
 
         # Safe old state and old action for next experience
         self.old_state = state
@@ -125,7 +124,3 @@ class DDPG:
 
         # Update time step
         self.time_step += 1
-
-        # Limit the replay buffer size
-        if len(self.replay_buffer) > REPLAY_BUFFER_SIZE:
-            self.replay_buffer.popleft()
