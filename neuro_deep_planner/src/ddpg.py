@@ -8,15 +8,15 @@ from actor import ActorNetwork
 
 # Hyper Parameters:
 REPLAY_BUFFER_SIZE = 10000  # How big can the buffer get
-REPLAY_START_SIZE = 500     # When do we start training
+REPLAY_START_SIZE = 5     # When do we start training
 
-BATCH_SIZE = 3             # How big are our batches
+BATCH_SIZE = 3            # How big are our batches
 
 GAMMA = 0.99                # Discount factor
 
 MU = 0.0                    # Center value of noise
-THETA = 0.5                 # Specifies how strong noise values are pulled towards mu
-SIGMA = 0.1                 # Variance of noise
+THETA = 0.1                 # Specifies how strong noise values are pulled towards mu
+SIGMA = 0.05                 # Variance of noise
 
 
 class DDPG:
@@ -51,37 +51,43 @@ class DDPG:
 
     def train(self):
 
-        print("training")
-        # Sample a random minibatch of N transitions from replay buffer
-        minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
+        if self.get_buffer_size() > REPLAY_START_SIZE:
+            if (self.time_step % 10) == 0:
+                print("training step %d", self.time_step)
 
-        state_batch = [data[0] for data in minibatch]
-        action_batch = [data[1] for data in minibatch]
-        # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
-        reward_batch = [data[2] for data in minibatch]
-        next_state_batch = [data[3] for data in minibatch]
+            # Sample a random minibatch of N transitions from replay buffer
+            minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
+
+            state_batch = [data[0] for data in minibatch]
+            action_batch = [data[1] for data in minibatch]
+            # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
+            reward_batch = [data[2] for data in minibatch]
+            next_state_batch = [data[3] for data in minibatch]
 
 
-        # Calculate y
-        y_batch = []
-        next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
+            # Calculate y
+            y_batch = []
+            next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
 
-        q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
+            q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
-        for i in range(0, BATCH_SIZE):
-            is_episode_finished = minibatch[i][4]
-            if is_episode_finished:
-                y_batch.append(reward_batch[i])
-            else:
-                y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
+            for i in range(0, BATCH_SIZE):
+                is_episode_finished = minibatch[i][4]
+                if is_episode_finished:
+                    y_batch.append(reward_batch[i])
+                else:
+                    y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
-        self.critic_network.train(y_batch, state_batch, action_batch)
+            self.critic_network.train(y_batch, state_batch, action_batch)
 
-        # Update the actor policy using the sampled gradient:
-        action_batch_for_gradients = self.actor_network.evaluate(state_batch)
-        q_gradient_batch = self.critic_network.gradients(state_batch, action_batch_for_gradients)
+            # Update the actor policy using the sampled gradient:
+            action_batch_for_gradients = self.actor_network.evaluate(state_batch)
+            q_gradient_batch = self.critic_network.gradients(state_batch, action_batch_for_gradients)
 
-        self.actor_network.train(q_gradient_batch, state_batch)
+            self.actor_network.train(q_gradient_batch, state_batch)
+
+            # Update time step
+            self.time_step += 1
 
     def get_action(self, state):
 
@@ -114,5 +120,4 @@ class DDPG:
         self.old_state = state
         self.old_action = self.action
 
-        # Update time step
-        self.time_step += 1
+
