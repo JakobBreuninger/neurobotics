@@ -159,6 +159,9 @@ namespace neuro_local_planner_wrapper
 
             // Are we initialized?
             bool initialized_;
+
+            // Goal counter and crash counter to display in the output
+            int goal_counter_, crash_counter_;
     };
 };
 #endif
