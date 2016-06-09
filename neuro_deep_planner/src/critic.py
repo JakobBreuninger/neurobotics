@@ -80,6 +80,8 @@ class CriticNetwork:
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
             self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
+
+            # Add regularization to loss
             self.loss = self.td_error + REGULARIZATION_DECAY * self.regularization
 
             tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
