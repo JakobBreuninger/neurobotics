@@ -16,7 +16,7 @@ GAMMA = 0.99                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
-SIGMA = 0.05                 # Variance of noise
+SIGMA = 0.1                 # Variance of noise
 
 
 class DDPG:

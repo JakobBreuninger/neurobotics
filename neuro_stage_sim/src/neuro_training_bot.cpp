@@ -16,7 +16,8 @@ void botCallback(const std_msgs::Bool new_round)
     if(new_round.data)
     {
         // Set some random points and push them into a vector of points
-        geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11;
+        geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16, x_17,
+                            x_18, x_19, x_20, x_21, x_22, x_23, x_24, x_25, x_26, x_27, x_28, x_29, x_30;
         std::vector<geometry_msgs::Pose> poses;
         x_1.position.x = 2.06546545029;
         x_1.position.y = 4.28590583801;
@@ -61,6 +62,82 @@ void botCallback(const std_msgs::Bool new_round)
         x_11.position.x = 7.77705907822;
         x_11.position.y = 7.32463550568;
         poses.push_back(x_11);
+
+        x_12.position.x = -1.1419 + 2.0;
+        x_12.position.y = 2.525 + 2.0;
+        poses.push_back(x_12);
+
+        x_13.position.x = 0.4474 + 2.0;
+        x_13.position.y = 2.723 + 2.0;
+        poses.push_back(x_13);
+
+        x_14.position.x = 0.767 + 2.0;
+        x_14.position.y = 5.6718 + 2.0;
+        poses.push_back(x_14);
+
+        x_15.position.x = 3.092 + 2.0;
+        x_15.position.y = 4.637 + 2.0;
+        poses.push_back(x_15);
+
+        x_16.position.x = -0.941 + 2.0;
+        x_16.position.y = 6.898 + 2.0;
+        poses.push_back(x_16);
+
+        x_17.position.x = 0.673 + 2.0;
+        x_17.position.y = 5.64 + 2.0;
+        poses.push_back(x_17);
+
+        x_18.position.x = 7.022 + 2.0;
+        x_18.position.y = -1.060 + 2.0;
+        poses.push_back(x_18);
+
+        x_19.position.x = 4.614 + 2.0;
+        x_19.position.y = -0.115 + 2.0;
+        poses.push_back(x_19);
+
+        x_20.position.x = 3.03 + 2.0;
+        x_20.position.y = 2.57 + 2.0;
+        poses.push_back(x_20);
+
+        x_21.position.x = 5.57 + 2.0;
+        x_21.position.y = 1.33 + 2.0;
+        poses.push_back(x_21);
+
+        x_22.position.x = 4.80 + 2.0;
+        x_22.position.y = -0.98 + 2.0;
+        poses.push_back(x_22);
+
+        x_23.position.x = 3.62 + 2.0;
+        x_23.position.y = 7.04 + 2.0;
+        poses.push_back(x_23);
+
+        x_24.position.x = 4.242 + 2.0;
+        x_24.position.y = 1.864 + 2.0;
+        poses.push_back(x_24);
+
+        x_25.position.x = -0.06 + 2.0;
+        x_25.position.y = 4.875 + 2.0;
+        poses.push_back(x_25);
+
+        x_26.position.x = 3.95 + 2.0;
+        x_26.position.y = 5.33 + 2.0;
+        poses.push_back(x_26);
+
+        x_27.position.x = 7.21 + 2.0;
+        x_27.position.y = 4.73 + 2.0;
+        poses.push_back(x_27);
+
+        x_28.position.x = 0.28 + 2.0;
+        x_28.position.y = 0.96 + 2.0;
+        poses.push_back(x_28);
+
+        x_29.position.x = 4.58 + 2.0;
+        x_29.position.y = 1.23 + 2.0;
+        poses.push_back(x_29);
+
+        x_30.position.x = 7.19 + 2.0;
+        x_30.position.y = 7.05 + 2.0;
+        poses.push_back(x_30);
 
         // Now randomly choose two points to use as start pose and goal pose and make sure they are different ones
         srand((unsigned int)time(NULL));
