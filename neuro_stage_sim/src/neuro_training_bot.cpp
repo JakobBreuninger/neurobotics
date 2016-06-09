@@ -16,7 +16,7 @@ void botCallback(const std_msgs::Bool new_round)
     if(new_round.data)
     {
         // Set some random points and push them into a vector of points
-        geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16, x_17,
+        /*geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16, x_17,
                             x_18, x_19, x_20, x_21, x_22, x_23, x_24, x_25, x_26, x_27, x_28, x_29, x_30;
         std::vector<geometry_msgs::Pose> poses;
         x_1.position.x = 2.06546545029;
@@ -146,16 +146,20 @@ void botCallback(const std_msgs::Bool new_round)
         while (start == goal)
         {
             goal = rand() % poses.size();
-        }
+        }*/
 
-        ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
+        // ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
 
-        // Get random orientation
+        // Get x and y coordinates and orientation for start point
+        double x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
+        double y = (double)(rand() % 340)/100.0 + 2.0;
         double o = (double)(rand() % 400)/100.0;
 
         // Send new position to stage
         geometry_msgs::Pose pose;
-        pose.position = poses.at(start).position;
+        pose.position.z = 0.0;
+        pose.position.x = x;
+        pose.position.y = y;
         pose.orientation.z = 1.0;
         pose.orientation.w = o;
         stage_pub.publish(pose);
@@ -172,13 +176,21 @@ void botCallback(const std_msgs::Bool new_round)
         ros::Rate r(1);
         r.sleep();
 
+        // Get x and y coordinates and orientation for start point + 2.0 for coordinate transform...
+        // TODO: automate the transform
+        x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
+        y = (double)(rand() % 340)/100.0 + 2.0;
+        o = (double)(rand() % 400)/100.0;
+
         // Send new goal position to move_base
-        geometry_msgs::PoseStamped goal_pose;
-        goal_pose.pose.orientation.z = 1.0;
-        goal_pose.pose.orientation.w = o;
-        goal_pose.pose.position = poses.at(goal).position;
-        goal_pose.header.frame_id = "map";
-        move_base_goal_pub.publish(goal_pose);
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.pose.position.z = 0.0;
+        pose_stamped.pose.position.x = x;
+        pose_stamped.pose.position.y = y;
+        pose_stamped.pose.orientation.z = 1.0;
+        pose_stamped.pose.orientation.w = o;
+        pose_stamped.header.frame_id = "map";
+        move_base_goal_pub.publish(pose_stamped);
     }
 }
 
@@ -200,16 +212,23 @@ int main(int argc, char **argv)
     //move_base_pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 
     // Make sure that the global planner is aware of the new position
-    ros::Rate r(0.05);
+    ros::Rate r(0.5);
     r.sleep();
 
-    // Send an initial goal position to move_base
-    geometry_msgs::PoseStamped goal_pose;
-    goal_pose.pose.orientation.z = 1.0;
-    goal_pose.pose.position.x = 6.35693025589;
-    goal_pose.pose.position.y = 3.92254328728;
-    goal_pose.header.frame_id = "map";
-    move_base_goal_pub.publish(goal_pose);
+    // Get x and y coordinates and orientation for start point
+    double x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
+    double y = (double)(rand() % 340)/100.0 + 2.0;
+    double o = (double)(rand() % 400)/100.0;
+
+    // Send new position to stage
+    geometry_msgs::PoseStamped pose;
+    pose.pose.position.z = 0.0;
+    pose.pose.position.x = x;
+    pose.pose.position.y = y;
+    pose.pose.orientation.z = 1.0;
+    pose.pose.orientation.w = o;
+    pose.header.frame_id = "map";
+    move_base_goal_pub.publish(pose);
 
     ros::spin();
 
