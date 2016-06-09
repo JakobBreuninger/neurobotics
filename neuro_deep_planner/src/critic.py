@@ -48,16 +48,16 @@ class CriticNetwork:
             with tf.variable_scope("critic") as scope:
                 self.critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
-            # create target actor network
-            self.map_input_target, self.action_input_target, self.Q_output_target = self.create_target_network(
-                image_size, action_size, image_no, self.ema_obj, self.critic_variables)
-
             # Create Exponential moving Average Object
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # Create the shadow variables, and add ops to maintain moving averages
             # of critic network
             self.compute_ema = self.ema_obj.apply(self.critic_variables)
+
+            # create target actor network
+            self.map_input_target, self.action_input_target, self.Q_output_target = self.create_target_network(
+                image_size, action_size, image_no, self.ema_obj, self.critic_variables)
 
             # L2 Regularization for all Variables
             self.regularization = 0

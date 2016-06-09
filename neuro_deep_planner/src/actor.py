@@ -53,15 +53,15 @@ class ActorNetwork:
 
                 self.actor_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
-            # Create target actor network
-            self.map_input_target, self.action_output_target = self.create_target_network()
-
             # Create Exponential moving Average Object
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
             # Create the shadow variables, and add ops to maintain moving averages
             # of actor network
             self.compute_ema = self.ema_obj.apply(self.actor_variables)
+
+            # Create target actor network
+            self.map_input_target, self.action_output_target = self.create_target_network()
 
             # Define training rules
             self.q_gradient_input = tf.placeholder("float", [None, action_size])
