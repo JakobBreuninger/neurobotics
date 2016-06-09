@@ -48,6 +48,11 @@ class ActorNetwork:
 
                 self.actor_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
+            # Create target actor network
+            self.map_input_target, self.action_output_target = self.create_target_network(image_size, action_size,
+                                                                                          image_no, self.ema_obj,
+                                                                                          self.actor_variables)
+
             # Create Exponential moving Average Object
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
@@ -55,20 +60,14 @@ class ActorNetwork:
             # of actor network
             self.compute_ema = self.ema_obj.apply(self.actor_variables)
 
-            # Create target actor network
-            self.map_input_target, self.action_output_target = self.create_target_network(image_size, action_size,
-                                                                                          image_no, self.ema_obj,
-                                                                                          self.actor_variables)
-
             # Define training rules
             self.q_gradient_input = tf.placeholder("float", [None, action_size])
-
             self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables,
                                                      -self.q_gradient_input/batch_size)
-
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
 
+            # initialize al variables
             self.sess.run(tf.initialize_all_variables())
 
 
