@@ -48,6 +48,10 @@ class CriticNetwork:
             with tf.variable_scope("critic") as scope:
                 self.critic_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
+            # create target actor network
+            self.map_input_target, self.action_input_target, self.Q_output_target = self.create_target_network(
+                image_size, action_size, image_no, self.ema_obj, self.critic_variables)
+
             # Create Exponential moving Average Object
             self.ema_obj = tf.train.ExponentialMovingAverage(decay=TARGET_DECAY)
 
@@ -55,23 +59,33 @@ class CriticNetwork:
             # of critic network
             self.compute_ema = self.ema_obj.apply(self.critic_variables)
 
-            # create target actor network
-            self.map_input_target, self.action_input_target, self.Q_output_target = self.create_target_network(
-                image_size, action_size, image_no, self.ema_obj, self.critic_variables)
-
             # L2 Regularization for all Variables
             self.regularization = 0
             for variable in self.critic_variables:
                 self.regularization = self.regularization + tf.nn.l2_loss(variable)
 
+            self.regularization2 = tf.nn.l2_loss(self.critic_variables[0]) + \
+                                   tf.nn.l2_loss(self.critic_variables[2]) + \
+                                   tf.nn.l2_loss(self.critic_variables[3]) + \
+                                   tf.nn.l2_loss(self.critic_variables[4]) + \
+                                   tf.nn.l2_loss(self.critic_variables[5]) + \
+                                   tf.nn.l2_loss(self.critic_variables[6]) + \
+                                   tf.nn.l2_loss(self.critic_variables[7]) + \
+                                   tf.nn.l2_loss(self.critic_variables[8]) + \
+                                   tf.nn.l2_loss(self.critic_variables[9]) + \
+                                   tf.nn.l2_loss(self.critic_variables[10]) + \
+                                   tf.nn.l2_loss(self.critic_variables[11]) + \
+                                   tf.nn.l2_loss(self.critic_variables[12])
+
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
-            self.td_error = tf.pow(self.Q_output-self.y_input, 2)/batch_size
+            self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
             self.loss = self.td_error + self.regularization
 
             tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
             tf.scalar_summary('regularization', tf.reduce_mean(self.regularization))
             tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
+            tf.scalar_summary('reg2', self.regularization2)
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
@@ -80,6 +94,7 @@ class CriticNetwork:
             self.merged_summaries = tf.merge_all_summaries()
             self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
+            # initiallize all variables
             self.sess.run(tf.initialize_all_variables())
 
     def create_network(self, image_size, action_size, image_no):
@@ -130,25 +145,25 @@ class CriticNetwork:
         # return all ops
         return map_input, action_input, q_output
 
-    def create_target_network(self, image_size, action_size, image_no, ema_obj, actor_variables):
+    def create_target_network(self, image_size, action_size, image_no, ema_obj, critic_variables):
 
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
         action_input = tf.placeholder("float", [None, action_size])
 
         with tf.variable_scope('critic_target'):
-            weights_conv1 = ema_obj.average(actor_variables[0])
-            biases_conv1 = ema_obj.average(actor_variables[1])
-            weights_conv2 = ema_obj.average(actor_variables[2])
-            biases_conv2 = ema_obj.average(actor_variables[3])
-            weights_conv3 = ema_obj.average(actor_variables[4])
-            biases_conv3 = ema_obj.average(actor_variables[5])
-            weights_actions = ema_obj.average(actor_variables[6])
-            weights_fully1 = ema_obj.average(actor_variables[7])
-            biases_fully1 = ema_obj.average(actor_variables[8])
-            weights_fully2 = ema_obj.average(actor_variables[9])
-            biases_fully2 = ema_obj.average(actor_variables[10])
-            weights_final = ema_obj.average(actor_variables[11])
-            biases_final = ema_obj.average(actor_variables[12])
+            weights_conv1 = ema_obj.average(critic_variables[0])
+            biases_conv1 = ema_obj.average(critic_variables[1])
+            weights_conv2 = ema_obj.average(critic_variables[2])
+            biases_conv2 = ema_obj.average(critic_variables[3])
+            weights_conv3 = ema_obj.average(critic_variables[4])
+            biases_conv3 = ema_obj.average(critic_variables[5])
+            weights_actions = ema_obj.average(critic_variables[6])
+            weights_fully1 = ema_obj.average(critic_variables[7])
+            biases_fully1 = ema_obj.average(critic_variables[8])
+            weights_fully2 = ema_obj.average(critic_variables[9])
+            biases_fully2 = ema_obj.average(critic_variables[10])
+            weights_final = ema_obj.average(critic_variables[11])
+            biases_final = ema_obj.average(critic_variables[12])
 
         # reshape image to apply convolution
         # input_image = tf.reshape(input_array, [-1,image_size,image_size,1])
