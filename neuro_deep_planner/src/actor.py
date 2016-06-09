@@ -23,7 +23,7 @@ FILTER3 = 32
 # Other Hyperparameters
 LEARNING_RATE = 0.0001  # standard learning rate
 
-TARGET_DECAY = 0.001    # for target networks
+TARGET_DECAY = 0.999    # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
