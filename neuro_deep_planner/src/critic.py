@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 import math
 
 # Params of fully connected layers
@@ -27,8 +26,6 @@ REGULARIZATION_DECAY = 0.01  # for L2 Regularization
 TARGET_DECAY = 0.001         # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
-
-SUMMARIES_DIR = '/tmp/asdf'
 
 
 class CriticNetwork:
@@ -72,6 +69,8 @@ class CriticNetwork:
             self.td_error = tf.pow(self.Q_output-self.y_input, 2)/batch_size
             self.loss = self.td_error + self.regularization
 
+            tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
+            tf.scalar_summary('regularization', tf.reduce_mean(self.regularization))
             tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
@@ -79,7 +78,7 @@ class CriticNetwork:
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
             self.merged_summaries = tf.merge_all_summaries()
-            self.summary_writer = tf.train.SummaryWriter('data')
+            self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
             self.sess.run(tf.initialize_all_variables())
 
@@ -89,27 +88,27 @@ class CriticNetwork:
 
         with tf.variable_scope('critic'):
 
-            weights_conv1 = self.create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1],
-                                                 RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
-            biases_conv1 = self.create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            weights_conv1 = create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, image_no, FILTER1],
+                                            RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+            biases_conv1 = create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
 
-            weights_conv2 = self.create_variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2],
-                                                 RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
-            biases_conv2 = self.create_variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            weights_conv2 = create_variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2],
+                                            RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
+            biases_conv2 = create_variable([FILTER2], RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
 
-            weights_conv3 = self.create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3],
-                                                 RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
-            biases_conv3 = self.create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            weights_conv3 = create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3],
+                                            RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
+            biases_conv3 = create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
-            weights_actions = self.create_variable([action_size, FULLY_LAYER1_SIZE], action_size)
-            weights_fully1 = self.create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
-            biases_fully1 = self.create_variable([FULLY_LAYER1_SIZE], self.fully_size)
+            weights_actions = create_variable([action_size, FULLY_LAYER1_SIZE], action_size)
+            weights_fully1 = create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
+            biases_fully1 = create_variable([FULLY_LAYER1_SIZE], self.fully_size)
 
-            weights_fully2 = self.create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
-            biases_fully2 = self.create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
+            weights_fully2 = create_variable([FULLY_LAYER1_SIZE, FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
+            biases_fully2 = create_variable([FULLY_LAYER2_SIZE], FULLY_LAYER1_SIZE)
 
-            weights_final = self.create_variable_final([FULLY_LAYER2_SIZE, 1])
-            biases_final = self.create_variable_final([1])
+            weights_final = create_variable_final([FULLY_LAYER2_SIZE, 1])
+            biases_final = create_variable_final([1])
 
         # 3 convolutional layers
         conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1], padding='VALID') +
@@ -175,17 +174,14 @@ class CriticNetwork:
         return map_input, action_input, q_output
 
     def train(self, y_batch, state_batch, action_batch):
-        self.sess.run(self.optimizer, feed_dict={
-            self.y_input: y_batch, self.map_input: state_batch, self.action_input: action_batch
-        })
+        self.sess.run(self.optimizer, feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
+                                                 action_batch})
         self.update_target()
         if (self.train_counter % 100) == 0:
-            print "im trying to write a summary"
-            summary = self.sess.run(self.merged_summaries, feed_dict={self.y_input: y_batch, self.map_input: state_batch,
-                                                            self.action_input: action_batch})
+            summary = self.sess.run(self.merged_summaries, feed_dict={self.y_input: y_batch, self.map_input:
+                                                                      state_batch, self.action_input: action_batch})
             self.summary_writer.add_summary(summary, self.train_counter)
         self.train_counter += 1
-
 
     def update_target(self):
         self.sess.run(self.compute_ema)
@@ -205,9 +201,11 @@ class CriticNetwork:
             self.action_input_target: action_batch
         })
 
-    # f fan-in size
-    def create_variable(self, shape, f):
-        return tf.Variable(tf.random_uniform(shape, -1/math.sqrt(f), 1/math.sqrt(f)))
 
-    def create_variable_final(self, shape):
-        return tf.Variable(tf.random_uniform(shape, -FINAL_WEIGHT_INIT, FINAL_WEIGHT_INIT))
+# f fan-in size
+def create_variable(shape, f):
+    return tf.Variable(tf.random_uniform(shape, -1/math.sqrt(f), 1/math.sqrt(f)))
+
+
+def create_variable_final(shape):
+    return tf.Variable(tf.random_uniform(shape, -FINAL_WEIGHT_INIT, FINAL_WEIGHT_INIT))
