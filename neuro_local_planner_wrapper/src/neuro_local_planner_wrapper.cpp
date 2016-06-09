@@ -94,6 +94,9 @@ namespace neuro_local_planner_wrapper
 
             is_running_ = false;
 
+            goal_counter_ = 0;
+            crash_counter_ = 0;
+
             // We are now initialized
             initialized_ = true;
         }
@@ -262,8 +265,8 @@ namespace neuro_local_planner_wrapper
 
         if(cost >= 200)
         {
-            //std::cout << cost << std::endl;
-            ROS_INFO("We crashed!");
+            crash_counter_++;
+            ROS_INFO("We crashed: %d", crash_counter_);
             reward = -1;
             return true;
         }
@@ -309,7 +312,8 @@ namespace neuro_local_planner_wrapper
         // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
         if(dist < 0.2)
         {
-            ROS_INFO("We made it to the goal!");
+            goal_counter_++;
+            ROS_INFO("We reached the goal: %d", goal_counter_);
             reward = 1;
             return true;
         }
