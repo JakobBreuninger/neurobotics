@@ -64,19 +64,6 @@ class CriticNetwork:
             for variable in self.critic_variables:
                 self.regularization += tf.nn.l2_loss(variable)
 
-            self.regularization2 = tf.nn.l2_loss(self.critic_variables[0]) + \
-                                   tf.nn.l2_loss(self.critic_variables[2]) + \
-                                   tf.nn.l2_loss(self.critic_variables[3]) + \
-                                   tf.nn.l2_loss(self.critic_variables[4]) + \
-                                   tf.nn.l2_loss(self.critic_variables[5]) + \
-                                   tf.nn.l2_loss(self.critic_variables[6]) + \
-                                   tf.nn.l2_loss(self.critic_variables[7]) + \
-                                   tf.nn.l2_loss(self.critic_variables[8]) + \
-                                   tf.nn.l2_loss(self.critic_variables[9]) + \
-                                   tf.nn.l2_loss(self.critic_variables[10]) + \
-                                   tf.nn.l2_loss(self.critic_variables[11]) + \
-                                   tf.nn.l2_loss(self.critic_variables[12])
-
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
             self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
@@ -87,7 +74,6 @@ class CriticNetwork:
             tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
             tf.scalar_summary('regularization', tf.reduce_mean(self.regularization))
             tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
-            tf.scalar_summary('reg2', self.regularization2)
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 

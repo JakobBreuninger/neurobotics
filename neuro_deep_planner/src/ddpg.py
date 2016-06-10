@@ -7,16 +7,16 @@ from actor import ActorNetwork
 
 
 # Hyper Parameters:
-REPLAY_BUFFER_SIZE = 1000000 # How big can the buffer get
+REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
 REPLAY_START_SIZE = 500      # When do we start training
 
-BATCH_SIZE = 16              # How big are our batches
+BATCH_SIZE = 32              # How big are our batches
 
 GAMMA = 0.99                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
-SIGMA = 0.1                 # Variance of noise
+SIGMA = 0.1                  # Variance of noise
 
 
 class DDPG:
@@ -32,7 +32,7 @@ class DDPG:
         # Initialize the current action and the old action for setting experiences
         self.old_action = np.ones(2, dtype='float')
 
-         # Initialize actor and critic networks
+        # Initialize actor and critic networks
         self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
 
@@ -62,7 +62,6 @@ class DDPG:
             # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
             reward_batch = [data[2] for data in minibatch]
             next_state_batch = [data[3] for data in minibatch]
-
 
             # Calculate y
             y_batch = []
@@ -118,5 +117,3 @@ class DDPG:
         # Safe old state and old action for next experience
         self.old_state = state
         self.old_action = self.action
-
-
