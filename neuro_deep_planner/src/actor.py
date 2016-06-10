@@ -155,6 +155,7 @@ class ActorNetwork:
         # return all ops
         return map_input, action_output
 
+
     def update_target(self):
         self.sess.run(self.compute_ema)
 
