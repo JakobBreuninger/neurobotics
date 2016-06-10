@@ -34,7 +34,9 @@ class CriticNetwork:
         self.graph = tf.Graph()
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
+
             self.train_counter = 1
+            self.td_error_sum = 0
 
             # Define fully connected layer size
             final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
@@ -64,34 +66,17 @@ class CriticNetwork:
             for variable in self.critic_variables:
                 self.regularization = self.regularization + tf.nn.l2_loss(variable)
 
-            self.regularization2 = tf.nn.l2_loss(self.critic_variables[0]) + \
-                                   tf.nn.l2_loss(self.critic_variables[2]) + \
-                                   tf.nn.l2_loss(self.critic_variables[3]) + \
-                                   tf.nn.l2_loss(self.critic_variables[4]) + \
-                                   tf.nn.l2_loss(self.critic_variables[5]) + \
-                                   tf.nn.l2_loss(self.critic_variables[6]) + \
-                                   tf.nn.l2_loss(self.critic_variables[7]) + \
-                                   tf.nn.l2_loss(self.critic_variables[8]) + \
-                                   tf.nn.l2_loss(self.critic_variables[9]) + \
-                                   tf.nn.l2_loss(self.critic_variables[10]) + \
-                                   tf.nn.l2_loss(self.critic_variables[11]) + \
-                                   tf.nn.l2_loss(self.critic_variables[12])
-
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
             self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
             self.loss = self.td_error + self.regularization
 
-            tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
-            tf.scalar_summary('regularization', tf.reduce_mean(self.regularization))
-            tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
-            tf.scalar_summary('reg2', self.regularization2)
+
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
-            self.merged_summaries = tf.merge_all_summaries()
             self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
             # initiallize all variables
@@ -189,13 +174,16 @@ class CriticNetwork:
         return map_input, action_input, q_output
 
     def train(self, y_batch, state_batch, action_batch):
-        self.sess.run(self.optimizer, feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
+        td_error_value, _ = self.sess.run([self.td_error, self.optimizer], feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
                                                  action_batch})
         self.update_target()
+        self.td_error_sum += td_error_value/100
+
+        # write the mean td_error over the last 100 batches to the summary
         if (self.train_counter % 100) == 0:
-            summary = self.sess.run(self.merged_summaries, feed_dict={self.y_input: y_batch, self.map_input:
-                                                                      state_batch, self.action_input: action_batch})
+            summary = tf.Summary(value=[tf.Summary.Value(tag='td_error', simple_value=self.td_error_sum)])
             self.summary_writer.add_summary(summary, self.train_counter)
+            self.td_error_sum = 0
         self.train_counter += 1
 
     def update_target(self):
