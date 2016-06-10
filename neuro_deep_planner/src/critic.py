@@ -66,10 +66,9 @@ class CriticNetwork:
             for variable in self.critic_variables:
                 self.regularization += tf.nn.l2_loss(variable)
 
-
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
-            self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
+            self.td_error = tf.reduce_mean(tf.pow(self.Q_output - self.y_input, 2))
 
             # Add regularization to loss
             self.loss = self.td_error + REGULARIZATION_DECAY * self.regularization
@@ -84,7 +83,7 @@ class CriticNetwork:
 
             self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
-            # initiallize all variables
+            # Initialize all variables
             self.sess.run(tf.initialize_all_variables())
 
     def create_network(self, image_size, action_size, image_no):

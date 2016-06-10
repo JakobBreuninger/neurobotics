@@ -21,11 +21,9 @@ FILTER2 = 32
 FILTER3 = 32
 
 # Other Hyperparameters
-LEARNING_RATE = 0.0001  # standard learning rate
+LEARNING_RATE = 0.00001  # standard learning rate
 
 TARGET_DECAY = 0.999    # for target networks
-
-FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
 
 class ActorNetwork:
@@ -66,7 +64,8 @@ class ActorNetwork:
             # Define training rules
             self.q_gradient_input = tf.placeholder("float", [None, action_size])
             self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables,
-                                                     -self.q_gradient_input/batch_size)
+                                                     grad_ys=-tf.reduce_mean(self.q_gradient_input))
+
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
 
@@ -165,6 +164,8 @@ class ActorNetwork:
     def train(self, q_gradient_batch, state_batch):
         self.sess.run(self.optimizer, feed_dict={self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})
         self.update_target()
+        print self.q_gradient_input
+        print tf.reduce_mean(self.q_gradient_input)
 
     def get_action(self, state):
         return self.sess.run(self.action_output, feed_dict={self.map_input: [state]})[0]
