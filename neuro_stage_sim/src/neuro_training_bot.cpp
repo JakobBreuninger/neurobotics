@@ -151,8 +151,8 @@ void botCallback(const std_msgs::Bool new_round)
         // ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
 
         // Get x and y coordinates and orientation for start point
-        double x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
-        double y = (double)(rand() % 340)/100.0 + 2.0;
+        double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
+        double y = (double)(rand() % 170)/100.0 + 2.0;
         double o = (double)(rand() % 400)/100.0;
 
         // Send new position to stage
@@ -178,8 +178,8 @@ void botCallback(const std_msgs::Bool new_round)
 
         // Get x and y coordinates and orientation for start point + 2.0 for coordinate transform...
         // TODO: automate the transform
-        x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
-        y = (double)(rand() % 340)/100.0 + 2.0;
+        x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
+        y = (double)(rand() % 170)/100.0 + 2.0;
         o = (double)(rand() % 400)/100.0;
 
         // Send new goal position to move_base
@@ -216,8 +216,8 @@ int main(int argc, char **argv)
     r.sleep();
 
     // Get x and y coordinates and orientation for start point
-    double x = (double)(rand() % 260)/100.0 - 1.5 + 2.0;
-    double y = (double)(rand() % 340)/100.0 + 2.0;
+    double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
+    double y = (double)(rand() % 170)/100.0 + 2.0;
     double o = (double)(rand() % 400)/100.0;
 
     // Send new position to stage
