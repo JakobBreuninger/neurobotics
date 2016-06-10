@@ -320,7 +320,6 @@ namespace neuro_local_planner_wrapper
         else
         {
             reward = 0.2/dist;
-            ROS_ERROR("reward: %f", reward);
             return false;
         }
     }
