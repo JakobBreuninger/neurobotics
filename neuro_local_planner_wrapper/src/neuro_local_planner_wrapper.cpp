@@ -249,7 +249,7 @@ namespace neuro_local_planner_wrapper
         marker_array_.markers.push_back(marker);
     }
 
-    bool NeuroLocalPlannerWrapper::isCrashed(int& reward) { // TODO vielleicht schöner lösbar
+    bool NeuroLocalPlannerWrapper::isCrashed(double& reward) { // TODO vielleicht schöner lösbar
 
         // Get current position of robot
         costmap_ros_->getRobotPose(current_pose_); // in frame odom
@@ -276,7 +276,7 @@ namespace neuro_local_planner_wrapper
         }
     }
 
-    bool NeuroLocalPlannerWrapper::isSubGoalReached(int& reward) {
+    bool NeuroLocalPlannerWrapper::isSubGoalReached(double& reward) {
 
         // Get current position of robot
         costmap_ros_->getRobotPose(current_pose_); // in frame odom
@@ -319,6 +319,8 @@ namespace neuro_local_planner_wrapper
         }
         else
         {
+            reward = 0.2/dist;
+            ROS_ERROR("reward: %f", reward);
             return false;
         }
     }
@@ -356,7 +358,7 @@ namespace neuro_local_planner_wrapper
     {
         if (is_running_) {
 
-            int reward = 0;
+            double reward = 0.0;
 
             if (isSubGoalReached(reward) || isCrashed(reward)) {
 

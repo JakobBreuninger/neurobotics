@@ -71,7 +71,7 @@ class DDPG:
             for i in range(0, BATCH_SIZE):
                 is_episode_finished = minibatch[i][4]
                 if is_episode_finished:
-                    y_batch.append([float(reward_batch[i])])
+                    y_batch.append([reward_batch[i]])
                 else:
                     y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
 
