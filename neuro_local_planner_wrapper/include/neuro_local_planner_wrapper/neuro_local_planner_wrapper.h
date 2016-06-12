@@ -71,9 +71,9 @@ namespace neuro_local_planner_wrapper
             // Return:              nothing
             void buildStateRepresentation(sensor_msgs::LaserScan laser_scan);
 
-            bool isCrashed(int& reward);
+            bool isCrashed(double& reward);
 
-            bool isSubGoalReached(int& reward);
+            bool isSubGoalReached(double& reward);
 
             void initializeCustomizedCostmap();
 
