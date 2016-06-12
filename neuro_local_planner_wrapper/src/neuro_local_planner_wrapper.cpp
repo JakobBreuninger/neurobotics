@@ -272,6 +272,7 @@ namespace neuro_local_planner_wrapper
         }
         else
         {
+            reward = (double)-cost/400;
             return false;
         }
     }
@@ -319,7 +320,10 @@ namespace neuro_local_planner_wrapper
         }
         else
         {
-            reward = 0.2/dist;
+            if (reward == 0.0)
+            {
+                reward = 0.1/dist;
+            }
             return false;
         }
     }
@@ -359,7 +363,7 @@ namespace neuro_local_planner_wrapper
 
             double reward = 0.0;
 
-            if (isSubGoalReached(reward) || isCrashed(reward)) {
+            if (isCrashed(reward) || isSubGoalReached(reward)) {
 
                 is_running_ = false; // this should be the last transition published in this episode
 

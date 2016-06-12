@@ -23,9 +23,7 @@ FILTER3 = 32
 # Other Hyperparameters
 LEARNING_RATE = 0.0001  # standard learning rate
 
-TARGET_DECAY = 0.999    # for target networks
-
-FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
+TARGET_DECAY = 0.9999   # for target networks
 
 
 class ActorNetwork:
@@ -65,8 +63,8 @@ class ActorNetwork:
 
             # Define training rules
             self.q_gradient_input = tf.placeholder("float", [None, action_size])
-            self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables,
-                                                     -self.q_gradient_input/batch_size)
+            self.parameters_gradients = tf.gradients(self.action_output, self.actor_variables, -self.q_gradient_input)
+
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
 
@@ -114,7 +112,10 @@ class ActorNetwork:
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        action_output = tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
+
+        # Testing gradient invert method therefore we want a linear out
+        # action_output = tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
+        action_output = tf.matmul(fully2, weights_final) + biases_final
 
         # return output op
         return map_input, action_output
@@ -151,7 +152,10 @@ class ActorNetwork:
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + biases_fully1)
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
-        action_output = tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
+
+        # Testing gradient invert method therefore we want a linear out
+        # action_output = tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
+        action_output = tf.matmul(fully2, weights_final) + biases_final
 
         # return all ops
         return map_input, action_output

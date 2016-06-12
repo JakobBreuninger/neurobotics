@@ -24,7 +24,7 @@ LEARNING_RATE = 0.0001       # standard learning rate
 
 REGULARIZATION_DECAY = 0.01  # for L2 Regularization
 
-TARGET_DECAY = 0.999         # for target networks
+TARGET_DECAY = 0.9999        # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
@@ -70,7 +70,7 @@ class CriticNetwork:
 
             # Define training optimizer
             self.y_input = tf.placeholder("float", [None, 1], name="y_input")
-            self.td_error = tf.reduce_mean(tf.pow(self.Q_output-self.y_input, 2))
+            self.td_error = tf.reduce_mean(tf.pow(self.Q_output - self.y_input, 2))
 
             # Add regularization to loss
             self.loss = self.td_error + REGULARIZATION_DECAY * self.regularization
@@ -87,7 +87,7 @@ class CriticNetwork:
             self.summary_op = tf.merge_all_summaries()
             self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
-            # initiallize all variables
+            # Initialize all variables
             self.sess.run(tf.initialize_all_variables())
 
     def create_network(self, image_size, action_size, image_no):
