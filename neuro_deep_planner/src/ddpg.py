@@ -49,13 +49,20 @@ class DDPG:
         # Initialize the old state
         self.old_state = np.zeros((self.width, self.height, self.depth), dtype='float')
 
-        self.graph = tf.Graph()
+        self.session = tf.Session()
+
         self.summary_op = tf.merge_all_summaries()
-        self.summary_writer = tf.train.SummaryWriter('data', self.graph)
+        self.summary_writer = tf.train.SummaryWriter('data')
 
         # Initialize actor and critic networks
-        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.graph, self.summary_writer)
-        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.graph, self.summary_writer)
+        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.session.graph,
+                                          self.summary_writer, self.session)
+        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.session.graph,
+                                            self.summary_writer, self.session)
+
+        self.session.run(tf.initialize_all_variables())
+
+        self.summary_writer.add_graph(self.session.graph)
 
         # Initialize replay buffer (ring buffer with max length)
         self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
@@ -122,12 +129,11 @@ class DDPG:
             # Update the actor policy using the sampled gradient:
             action_batch_for_gradients = self.actor_network.evaluate(state_batch)
 
-            #q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
+            # Get the action gradient batch
+            q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
 
             # Testing new gradient invert method
-            q_gradient_batch = self.grad_inv.invert(self.critic_network.get_action_gradient(state_batch,
-                                                                                            action_batch_for_gradients),
-                                                    action_batch_for_gradients)
+            q_gradient_batch = self.grad_inv.invert(q_gradient_batch, action_batch_for_gradients)
 
             self.actor_network.train(q_gradient_batch, state_batch)
 

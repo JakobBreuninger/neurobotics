@@ -31,10 +31,10 @@ FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
 class CriticNetwork:
 
-    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer):
+    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer, session):
         self.graph = graph
         with self.graph.as_default():
-            self.sess = tf.InteractiveSession()
+            self.sess = session
 
             self.train_counter = 1
             self.td_error_sum = 0
@@ -82,7 +82,7 @@ class CriticNetwork:
             # summary stuff
             self.summary_writer = summary_writer
             # Initialize all variables
-            self.sess.run(tf.initialize_all_variables())
+            #self.sess.run(tf.initialize_all_variables())
 
     def create_network(self, image_size, action_size, image_no):
         map_input = tf.placeholder("float", [None, image_size, image_size, image_no])

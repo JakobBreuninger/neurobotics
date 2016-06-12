@@ -29,11 +29,11 @@ TARGET_DECAY = 0.999   # for target networks
 
 class ActorNetwork:
 
-    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer):
+    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer, session):
 
         self.graph = graph
         with self.graph.as_default():
-            self.sess = tf.InteractiveSession()
+            self.sess = session
 
             self.image_size = image_size
             self.action_size = action_size
@@ -49,7 +49,6 @@ class ActorNetwork:
 
             # Get all the variables in the actor network
             with tf.variable_scope("actor") as scope:
-
                 self.actor_variables = tf.get_collection(tf.GraphKeys.VARIABLES, scope=scope.name)
 
             # Create Exponential moving Average Object
@@ -71,8 +70,8 @@ class ActorNetwork:
 
             self.summary_writer = summary_writer
 
-            # initialize al variables
-            self.sess.run(tf.initialize_all_variables())
+            # initialize all variables
+            #self.sess.run(tf.initialize_all_variables())
 
             self.train_counter = 0
 
