@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from critic import create_variable
 from critic import create_variable_final
 
@@ -23,14 +24,14 @@ FILTER3 = 32
 # Other Hyperparameters
 LEARNING_RATE = 0.0001  # standard learning rate
 
-TARGET_DECAY = 0.9999   # for target networks
+TARGET_DECAY = 0.999   # for target networks
 
 
 class ActorNetwork:
 
-    def __init__(self, image_size, action_size, image_no, batch_size):
+    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer):
 
-        self.graph = tf.Graph()
+        self.graph = graph
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
 
@@ -68,8 +69,12 @@ class ActorNetwork:
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
 
+            self.summary_writer = summary_writer
+
             # initialize al variables
             self.sess.run(tf.initialize_all_variables())
+
+            self.train_counter = 0
 
     def create_network(self):
 
@@ -164,14 +169,40 @@ class ActorNetwork:
         self.sess.run(self.compute_ema)
 
     def evaluate(self, state_batch):
-        return self.sess.run(self.action_output, feed_dict={self.map_input: state_batch})
+
+        actions = self.sess.run(self.action_output, feed_dict={self.map_input: state_batch})
+
+        # Get the action outputs and add them to the summary
+        actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
+        summary_action_0 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[0]',
+                                                              simple_value=np.asscalar(actions_mean[0]))])
+        summary_action_1 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[1]',
+                                                              simple_value=np.asscalar(actions_mean[1]))])
+        self.summary_writer.add_summary(summary_action_0, self.train_counter)
+        self.summary_writer.add_summary(summary_action_1, self.train_counter)
+
+        return actions
 
     def train(self, q_gradient_batch, state_batch):
         self.sess.run(self.optimizer, feed_dict={self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})
         self.update_target()
+        self.train_counter += 1
 
     def get_action(self, state):
+
         return self.sess.run(self.action_output, feed_dict={self.map_input: [state]})[0]
 
     def target_evaluate(self, state_batch):
-        return self.sess.run(self.action_output_target, feed_dict={self.map_input_target: state_batch})
+
+        actions = self.sess.run(self.action_output_target, feed_dict={self.map_input_target: state_batch})
+
+        # Get the target action outputs and add them to the summary
+        actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
+        summary_target_action_0 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[0]',
+                                                                     simple_value=np.asscalar(actions_mean[0]))])
+        summary_target_action_1 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[1]',
+                                                                     simple_value=np.asscalar(actions_mean[1]))])
+        self.summary_writer.add_summary(summary_target_action_0, self.train_counter)
+        self.summary_writer.add_summary(summary_target_action_1, self.train_counter)
+
+        return actions

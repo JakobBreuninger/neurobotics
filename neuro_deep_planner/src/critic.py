@@ -20,19 +20,19 @@ FILTER2 = 32
 FILTER3 = 32
 
 # Other Hyperparameters
-LEARNING_RATE = 0.0001       # standard learning rate
+LEARNING_RATE = 0.001       # standard learning rate
 
 REGULARIZATION_DECAY = 0.01  # for L2 Regularization
 
-TARGET_DECAY = 0.9999        # for target networks
+TARGET_DECAY = 0.999        # for target networks
 
 FINAL_WEIGHT_INIT = 0.0003   # small init weights for output layer
 
 
 class CriticNetwork:
 
-    def __init__(self, image_size, action_size, image_no, batch_size):
-        self.graph = tf.Graph()
+    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer):
+        self.graph = graph
         with self.graph.as_default():
             self.sess = tf.InteractiveSession()
 
@@ -80,13 +80,7 @@ class CriticNetwork:
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
             # summary stuff
-            tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
-            tf.scalar_summary('regularization', self.regularization)
-            tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
-            tf.histogram_summary('action_gradients', self.action_gradients[0])
-            self.summary_op = tf.merge_all_summaries()
-            self.summary_writer = tf.train.SummaryWriter('data', self.graph)
-
+            self.summary_writer = summary_writer
             # Initialize all variables
             self.sess.run(tf.initialize_all_variables())
 
@@ -182,50 +176,48 @@ class CriticNetwork:
         return map_input, action_input, q_output
 
     def train(self, y_batch, state_batch, action_batch):
-        #run optimizer and compute some summary values
-        summary, td_error_value, _ = self.sess.run([self.summary_op, self.td_error, self.optimizer], feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
-                                                 action_batch})
 
-        self.summary_writer.add_summary(summary, self.train_counter)
+        # run optimizer and compute some summary values
+        td_error_value, _ = self.sess.run([self.td_error, self.optimizer], feed_dict={self.y_input: y_batch,
+                                                                                      self.map_input: state_batch,
+                                                                                      self.action_input: action_batch})
+
         self.update_target()
 
         self.train_counter += 1
 
-        # more summary stuff
-        actor_grads = self.sess.run(self.action_gradients, feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
-            action_batch})
-
-        actor_grads_mean = np.mean(actor_grads[0], axis=0)
-        summary1 = tf.Summary(value=[tf.Summary.Value(tag='actor_grads_mean[0]', simple_value=np.asscalar(actor_grads_mean[0]))])
-        self.summary_writer.add_summary(summary1, self.train_counter)
-        summary2 = tf.Summary(value=[tf.Summary.Value(tag='actor_grads_mean[1]', simple_value=np.asscalar(actor_grads_mean[1]))])
-        self.summary_writer.add_summary(summary2, self.train_counter)
-
-        # average td_error over the last 100 batches
-        self.td_error_sum += td_error_value/100
-        if (self.train_counter % 100) == 0:
-            summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=self.td_error_sum)])
-            self.summary_writer.add_summary(summary, self.train_counter)
-            self.td_error_sum = 0
-
+        # Add td error to the summary writer
+        summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=td_error_value)])
+        self.summary_writer.add_summary(summary, self.train_counter)
 
     def update_target(self):
+
         self.sess.run(self.compute_ema)
 
     def get_action_gradient(self, state_batch, action_batch):
-        return self.sess.run(self.action_gradients, feed_dict={
-            self.map_input: state_batch,
-            self.action_input: action_batch
-        })[0]
+
+        action_gradients = self.sess.run(self.action_gradients, feed_dict={self.map_input: state_batch,
+                                                                           self.action_input: action_batch})[0]
+
+        # Create summaries for the action gradients and add them to the summary writer
+        action_grads_mean = np.mean(action_gradients[0], axis=0)
+        summary_actor_grads_0 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[0]',
+                                                                   simple_value=np.asscalar(action_grads_mean[0]))])
+        summary_actor_grads_1 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[1]',
+                                                                   simple_value=np.asscalar(action_grads_mean[1]))])
+        self.summary_writer.add_summary(summary_actor_grads_0, self.train_counter)
+        self.summary_writer.add_summary(summary_actor_grads_1, self.train_counter)
+
+        return action_gradients
 
     def evaluate(self, state_batch, action_batch):
+
         return self.sess.run(self.Q_output, feed_dict={self.map_input: state_batch, self.action_input: action_batch})
 
     def target_evaluate(self, state_batch, action_batch):
-        return self.sess.run(self.Q_output_target, feed_dict={
-            self.map_input_target: state_batch,
-            self.action_input_target: action_batch
-        })
+
+        return self.sess.run(self.Q_output_target, feed_dict={self.map_input_target: state_batch,
+                                                              self.action_input_target: action_batch})
 
 
 # f fan-in size

@@ -5,6 +5,7 @@ from ou_noise import OUNoise
 from critic import CriticNetwork
 from actor import ActorNetwork
 from tensorflow_grad_inverter import GradInverter
+import tensorflow as tf
 
 # For saving replay buffer
 import pickle
@@ -15,9 +16,9 @@ import os
 REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 16              # How big are our batches
+BATCH_SIZE = 64              # How big are our batches
 
-GAMMA = 0.95                 # Discount factor
+GAMMA = 0.99                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -48,9 +49,13 @@ class DDPG:
         # Initialize the old state
         self.old_state = np.zeros((self.width, self.height, self.depth), dtype='float')
 
+        self.graph = tf.Graph()
+        self.summary_op = tf.merge_all_summaries()
+        self.summary_writer = tf.train.SummaryWriter('data', self.graph)
+
         # Initialize actor and critic networks
-        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
-        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE)
+        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.graph, self.summary_writer)
+        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.graph, self.summary_writer)
 
         # Initialize replay buffer (ring buffer with max length)
         self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
@@ -102,6 +107,9 @@ class DDPG:
             next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
+            # For debugging
+            self.actor_network.evaluate(next_state_batch)
+
             for i in range(0, BATCH_SIZE):
                 is_episode_finished = minibatch[i][4]
                 if is_episode_finished:
@@ -116,12 +124,10 @@ class DDPG:
 
             #q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
 
-
             # Testing new gradient invert method
             q_gradient_batch = self.grad_inv.invert(self.critic_network.get_action_gradient(state_batch,
                                                                                             action_batch_for_gradients),
                                                     action_batch_for_gradients)
-
 
             self.actor_network.train(q_gradient_batch, state_batch)
 

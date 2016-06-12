@@ -61,7 +61,7 @@ class ROSHandler:
     def publish_action(self, action):
 
         # Generate msg output
-        vel_cmd = Twist(Vector3(action[0],0,0),Vector3(0,0,action[1]))
+        vel_cmd = Twist(Vector3(action[0], 0, 0), Vector3(0, 0, action[1]))
 
         # Send the action back
         self.__pub.publish(vel_cmd)
