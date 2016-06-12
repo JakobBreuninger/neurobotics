@@ -187,7 +187,7 @@ class CriticNetwork:
         self.train_counter += 1
 
         # Add td error to the summary writer
-        summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=td_error_value)])
+        summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=np.asscalar(td_error_value))])
         self.summary_writer.add_summary(summary, self.train_counter)
 
     def update_target(self):
@@ -200,7 +200,8 @@ class CriticNetwork:
                                                                            self.action_input: action_batch})[0]
 
         # Create summaries for the action gradients and add them to the summary writer
-        action_grads_mean = np.mean(action_gradients[0], axis=0)
+        action_grads_mean = np.mean(action_gradients, axis=0)
+
         summary_actor_grads_0 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[0]',
                                                                    simple_value=np.asscalar(action_grads_mean[0]))])
         summary_actor_grads_1 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[1]',

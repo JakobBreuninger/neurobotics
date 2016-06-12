@@ -184,6 +184,7 @@ class ActorNetwork:
         return actions
 
     def train(self, q_gradient_batch, state_batch):
+
         self.sess.run(self.optimizer, feed_dict={self.q_gradient_input: q_gradient_batch, self.map_input: state_batch})
         self.update_target()
         self.train_counter += 1
