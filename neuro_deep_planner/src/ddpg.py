@@ -17,7 +17,7 @@ REPLAY_START_SIZE = 5000     # When do we start training
 
 BATCH_SIZE = 32              # How big are our batches
 
-GAMMA = 0.99                 # Discount factor
+GAMMA = 0.95                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
