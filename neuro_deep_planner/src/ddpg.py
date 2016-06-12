@@ -4,7 +4,9 @@ from collections import deque
 from ou_noise import OUNoise
 from critic import CriticNetwork
 from actor import ActorNetwork
+from tensorflow_grad_inverter import GradInverter
 
+# For saving replay buffer
 import pickle
 import os
 
@@ -13,7 +15,7 @@ import os
 REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 128              # How big are our batches
+BATCH_SIZE = 32              # How big are our batches
 
 GAMMA = 0.99                 # Discount factor
 
@@ -31,12 +33,17 @@ class DDPG:
         self.width = self.height
         self.depth = 4
         self.action_dim = 2
+        self.action_bounds = [[1.0, 1.0],
+                              [-1.0, -1.0]]
 
         # Initialize the current action and the old action for setting experiences
         self.old_action = np.ones(2, dtype='float')
         self.network_action = np.zeros(2, dtype='float')
         self.noise_action = np.zeros(2, dtype='float')
         self.action = np.zeros(2, dtype='float')
+
+        # Initialize the grad inverter object
+        self.grad_inv = GradInverter(self.action_bounds)
 
         # Initialize the old state
         self.old_state = np.zeros((self.width, self.height, self.depth), dtype='float')
@@ -106,7 +113,11 @@ class DDPG:
 
             # Update the actor policy using the sampled gradient:
             action_batch_for_gradients = self.actor_network.evaluate(state_batch)
-            q_gradient_batch = self.critic_network.gradients(state_batch, action_batch_for_gradients)
+
+            # Testing new gradient invert method
+            q_gradient_batch = self.grad_inv.invert(self.critic_network.gradients(state_batch,
+                                                                                  action_batch_for_gradients),
+                                                    action_batch_for_gradients)
 
             self.actor_network.train(q_gradient_batch, state_batch)
 
