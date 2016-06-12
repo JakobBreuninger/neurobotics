@@ -118,8 +118,8 @@ class DDPG:
 
 
             # Testing new gradient invert method
-            q_gradient_batch = self.grad_inv.invert(self.critic_network.gradients(state_batch,
-                                                                                  action_batch_for_gradients),
+            q_gradient_batch = self.grad_inv.invert(self.critic_network.get_action_gradient(state_batch,
+                                                                                            action_batch_for_gradients),
                                                     action_batch_for_gradients)
 
 
