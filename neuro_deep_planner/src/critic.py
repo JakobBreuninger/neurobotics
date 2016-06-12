@@ -1,5 +1,6 @@
 import tensorflow as tf
 import math
+import numpy as np
 
 # Params of fully connected layers
 FULLY_LAYER1_SIZE = 200
@@ -37,6 +38,7 @@ class CriticNetwork:
 
             self.train_counter = 1
             self.td_error_sum = 0
+            self.action_gradient_sum = np.zeros(2)
 
             # Define fully connected layer size
             final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
@@ -73,14 +75,16 @@ class CriticNetwork:
             # Add regularization to loss
             self.loss = self.td_error + REGULARIZATION_DECAY * self.regularization
 
-            tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
-            tf.scalar_summary('regularization', tf.reduce_mean(self.regularization))
-            tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
-
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).minimize(self.loss)
 
             self.action_gradients = tf.gradients(self.Q_output, self.action_input)
 
+            # summary stuff
+            tf.scalar_summary('td_error', tf.reduce_mean(self.td_error))
+            tf.scalar_summary('regularization', self.regularization)
+            tf.scalar_summary('critic_loss', tf.reduce_mean(self.loss))
+            tf.histogram_summary('action_gradients', self.action_gradients[0])
+            self.summary_op = tf.merge_all_summaries()
             self.summary_writer = tf.train.SummaryWriter('data', self.graph)
 
             # Initialize all variables
@@ -178,22 +182,37 @@ class CriticNetwork:
         return map_input, action_input, q_output
 
     def train(self, y_batch, state_batch, action_batch):
-        td_error_value, _ = self.sess.run([self.td_error, self.optimizer], feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
+        #run optimizer and compute some summary values
+        summary, td_error_value, _ = self.sess.run([self.summary_op, self.td_error, self.optimizer], feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
                                                  action_batch})
-        self.update_target()
-        self.td_error_sum += td_error_value/100
 
-        # write the mean td_error over the last 100 batches to the summary
+        self.summary_writer.add_summary(summary, self.train_counter)
+        self.update_target()
+
+        self.train_counter += 1
+
+        # more summary stuff
+        actor_grads = self.sess.run(self.action_gradients, feed_dict={self.y_input: y_batch, self.map_input: state_batch, self.action_input:
+            action_batch})
+
+        actor_grads_mean = np.mean(actor_grads[0], axis=0)
+        summary1 = tf.Summary(value=[tf.Summary.Value(tag='actor_grads_mean[0]', simple_value=np.asscalar(actor_grads_mean[0]))])
+        self.summary_writer.add_summary(summary1, self.train_counter)
+        summary2 = tf.Summary(value=[tf.Summary.Value(tag='actor_grads_mean[1]', simple_value=np.asscalar(actor_grads_mean[1]))])
+        self.summary_writer.add_summary(summary2, self.train_counter)
+
+        # average td_error over the last 100 batches
+        self.td_error_sum += td_error_value/100
         if (self.train_counter % 100) == 0:
-            summary = tf.Summary(value=[tf.Summary.Value(tag='td_error', simple_value=self.td_error_sum)])
+            summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=self.td_error_sum)])
             self.summary_writer.add_summary(summary, self.train_counter)
             self.td_error_sum = 0
-        self.train_counter += 1
+
 
     def update_target(self):
         self.sess.run(self.compute_ema)
 
-    def gradients(self, state_batch, action_batch):
+    def get_action_gradient(self, state_batch, action_batch):
         return self.sess.run(self.action_gradients, feed_dict={
             self.map_input: state_batch,
             self.action_input: action_batch

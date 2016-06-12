@@ -15,7 +15,7 @@ import os
 REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 32              # How big are our batches
+BATCH_SIZE = 16              # How big are our batches
 
 GAMMA = 0.95                 # Discount factor
 
@@ -114,10 +114,14 @@ class DDPG:
             # Update the actor policy using the sampled gradient:
             action_batch_for_gradients = self.actor_network.evaluate(state_batch)
 
+            #q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
+
+
             # Testing new gradient invert method
             q_gradient_batch = self.grad_inv.invert(self.critic_network.gradients(state_batch,
                                                                                   action_batch_for_gradients),
                                                     action_batch_for_gradients)
+
 
             self.actor_network.train(q_gradient_batch, state_batch)
 
