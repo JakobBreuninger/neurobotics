@@ -10,9 +10,9 @@ from actor import ActorNetwork
 REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
 REPLAY_START_SIZE = 500      # When do we start training
 
-BATCH_SIZE = 32              # How big are our batches
+BATCH_SIZE = 16              # How big are our batches
 
-GAMMA = 0.99                 # Discount factor
+GAMMA = 0.95                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
