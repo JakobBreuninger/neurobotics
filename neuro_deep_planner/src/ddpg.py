@@ -11,14 +11,17 @@ import tensorflow as tf
 import pickle
 import os
 
+# Visualization
+from state_visualizer import CostmapVisualizer
+
 
 # Hyper Parameters:
-REPLAY_BUFFER_SIZE = 100000  # How big can the buffer get
+REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 64              # How big are our batches
+BATCH_SIZE = 32              # How big are our batches
 
-GAMMA = 0.99                 # Discount factor
+GAMMA = 0.95                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -29,13 +32,18 @@ class DDPG:
 
     def __init__(self):
 
+        # view the state batches
+        self.visualize_input = False
+        if self.visualize_input:
+            self.viewer = CostmapVisualizer()
+
         # Hardcode input size and action size
         self.height = 84
         self.width = self.height
         self.depth = 4
         self.action_dim = 2
-        self.action_bounds = [[1.0, 1.0],
-                              [-1.0, -1.0]]
+        self.action_bounds = [[0.5, 0.5],
+                              [-0.5, -0.5]]
 
         # Initialize the current action and the old action for setting experiences
         self.old_action = np.ones(2, dtype='float')
@@ -55,9 +63,9 @@ class DDPG:
         self.summary_writer = tf.train.SummaryWriter('data')
 
         # Initialize actor and critic networks
-        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.session.graph,
+        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session.graph,
                                           self.summary_writer, self.session)
-        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, BATCH_SIZE, self.session.graph,
+        self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, self.session.graph,
                                             self.summary_writer, self.session)
 
         self.session.run(tf.initialize_all_variables())
@@ -80,7 +88,7 @@ class DDPG:
         self.save_initial_buffer = False
         self.saved_buffer = True
         if self.saved_buffer:
-            self.replay_buffer = pickle.load(open(os.path.dirname(__file__)+"/initial_replay_buffer.p", "rb"))
+            self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
             self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
 
@@ -108,6 +116,16 @@ class DDPG:
             # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
             reward_batch = [data[2] for data in minibatch]
             next_state_batch = [data[3] for data in minibatch]
+
+            if self.visualize_input:
+                state_batch_np = np.asarray(state_batch)
+
+                # Scale up to grey scale again
+                state_batch_np = np.multiply(state_batch_np, -100.0)
+                state_batch_np = np.add(state_batch_np, 100.0)
+                self.viewer.set_data(state_batch_np)
+                self.viewer.run()
+                self.visualize_input = False
 
             # Calculate y
             y_batch = []
@@ -167,4 +185,4 @@ class DDPG:
         self.old_action = self.action
 
     def save_buffer(self):
-        pickle.dump(self.replay_buffer, open(os.path.dirname(__file__)+"/initial_replay_buffer.p", "wb"))
+        pickle.dump(self.replay_buffer, open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "wb"))

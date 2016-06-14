@@ -22,14 +22,14 @@ FILTER2 = 32
 FILTER3 = 32
 
 # Other Hyperparameters
-LEARNING_RATE = 0.0001  # standard learning rate
+LEARNING_RATE = 0.001  # standard learning rate
 
-TARGET_DECAY = 0.999   # for target networks
+TARGET_DECAY = 0.9999   # for target networks
 
 
 class ActorNetwork:
 
-    def __init__(self, image_size, action_size, image_no, batch_size, graph, summary_writer, session):
+    def __init__(self, image_size, action_size, image_no, graph, summary_writer, session):
 
         self.graph = graph
         with self.graph.as_default():
@@ -45,7 +45,8 @@ class ActorNetwork:
             self.fully_size = (final_conv_height**2) * FILTER3
 
             # create actor network
-            self.map_input, self.action_output = self.create_network()
+            self.map_input = tf.placeholder("float", [None, self.image_size, self.image_size, self.image_no])
+            self.action_output = self.create_network()
 
             # Get all the variables in the actor network
             with tf.variable_scope("actor") as scope:
@@ -70,20 +71,15 @@ class ActorNetwork:
 
             self.summary_writer = summary_writer
 
-            # initialize all variables
-            #self.sess.run(tf.initialize_all_variables())
-
             self.train_counter = 0
 
     def create_network(self):
 
-        map_input = tf.placeholder("float", [None, self.image_size, self.image_size, self.image_no])
-
         with tf.variable_scope('actor'):
 
             weights_conv1 = create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, self.image_no, FILTER1],
-                                            RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
-            biases_conv1 = create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1)
+                                            RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1 * self.image_no)
+            biases_conv1 = create_variable([FILTER1], RECEPTIVE_FIELD1 * RECEPTIVE_FIELD1 * self.image_no)
 
             weights_conv2 = create_variable([RECEPTIVE_FIELD2, RECEPTIVE_FIELD2, FILTER1, FILTER2],
                                             RECEPTIVE_FIELD2 * RECEPTIVE_FIELD2 * FILTER1)
@@ -103,8 +99,8 @@ class ActorNetwork:
             biases_final = create_variable_final([self.action_size])
 
         # 3 convolutional layers
-        conv1 = tf.nn.relu(tf.nn.conv2d(map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1], padding='VALID') +
-                           biases_conv1)
+        conv1 = tf.nn.relu(tf.nn.conv2d(self.map_input, weights_conv1, strides=[1, STRIDE1, STRIDE1, 1],
+                                        padding='VALID') + biases_conv1)
         conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
                            biases_conv2)
         conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
@@ -118,11 +114,10 @@ class ActorNetwork:
         fully2 = tf.nn.relu(tf.matmul(fully1, weights_fully2) + biases_fully2)
 
         # Testing gradient invert method therefore we want a linear out
-        # action_output = tf.tanh(tf.matmul(fully2, weights_final) + biases_final)
         action_output = tf.matmul(fully2, weights_final) + biases_final
 
         # return output op
-        return map_input, action_output
+        return action_output
 
     def create_target_network(self):
 
