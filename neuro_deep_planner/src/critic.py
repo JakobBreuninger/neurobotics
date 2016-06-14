@@ -28,6 +28,8 @@ TARGET_DECAY = 0.9999         # for target networks
 
 FINAL_WEIGHT_INIT = 0.003   # small init weights for output layer
 
+# For plotting
+PLOT_STEP = 10
 
 class CriticNetwork:
 
@@ -84,6 +86,10 @@ class CriticNetwork:
 
             # summary stuff
             self.summary_writer = summary_writer
+
+            # Variables for plotting
+            self.action_grads_mean_plot = [0, 0]
+            self.td_error_plot = 0
 
     def create_network(self, action_size, image_no):
 
@@ -177,11 +183,21 @@ class CriticNetwork:
 
         self.update_target()
 
-        self.train_counter += 1
+        self.td_error_plot += td_error_value
 
-        # Add td error to the summary writer
-        summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean', simple_value=np.asscalar(td_error_value))])
-        self.summary_writer.add_summary(summary, self.train_counter)
+        # Only save files every 10 steps
+        if (self.train_counter % PLOT_STEP) == 0:
+
+            self.td_error_plot /= PLOT_STEP
+
+            # Add td error to the summary writer
+            summary = tf.Summary(value=[tf.Summary.Value(tag='td_error_mean',
+                                                         simple_value=np.asscalar(self.td_error_plot))])
+            self.summary_writer.add_summary(summary, self.train_counter)
+
+            self.td_error_plot = 0.0
+
+        self.train_counter += 1
 
     def update_target(self):
 
@@ -194,13 +210,23 @@ class CriticNetwork:
 
         # Create summaries for the action gradients and add them to the summary writer
         action_grads_mean = np.mean(action_gradients, axis=0)
+        self.action_grads_mean_plot += action_grads_mean
 
-        summary_actor_grads_0 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[0]',
-                                                                   simple_value=np.asscalar(action_grads_mean[0]))])
-        summary_actor_grads_1 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[1]',
-                                                                   simple_value=np.asscalar(action_grads_mean[1]))])
-        self.summary_writer.add_summary(summary_actor_grads_0, self.train_counter)
-        self.summary_writer.add_summary(summary_actor_grads_1, self.train_counter)
+        # Only save files every 10 steps
+        if (self.train_counter % PLOT_STEP) == 0:
+
+            self.action_grads_mean_plot /= PLOT_STEP
+
+            summary_actor_grads_0 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[0]',
+                                                                       simple_value=np.asscalar(
+                                                                           self.action_grads_mean_plot[0]))])
+            summary_actor_grads_1 = tf.Summary(value=[tf.Summary.Value(tag='action_grads_mean[1]',
+                                                                       simple_value=np.asscalar(
+                                                                           self.action_grads_mean_plot[1]))])
+            self.summary_writer.add_summary(summary_actor_grads_0, self.train_counter)
+            self.summary_writer.add_summary(summary_actor_grads_1, self.train_counter)
+
+            self.action_grads_mean_plot = [0, 0]
 
         return action_gradients
 
