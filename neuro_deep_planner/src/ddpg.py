@@ -17,9 +17,9 @@ from state_visualizer import CostmapVisualizer
 
 # Hyper Parameters:
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
-REPLAY_START_SIZE = 5000     # When do we start training
+REPLAY_START_SIZE = 100     # When do we start training
 
-BATCH_SIZE = 4              # How big are our batches
+BATCH_SIZE = 16              # How big are our batches
 
 GAMMA = 0.95                 # Discount factor
 
@@ -33,7 +33,7 @@ class DDPG:
     def __init__(self):
 
         # view the state batches
-        self.visualize_input = True
+        self.visualize_input = False
         if self.visualize_input:
             self.viewer = CostmapVisualizer()
 
@@ -85,8 +85,8 @@ class DDPG:
         self.first_experience = True
 
         # Are we saving a new initial buffer or loading an existing one or neither?
-        self.save_initial_buffer = False
-        self.saved_buffer = True
+        self.save_initial_buffer = True
+        self.saved_buffer = False
         if self.saved_buffer:
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
@@ -174,6 +174,9 @@ class DDPG:
 
     def set_experience(self, state, reward, is_episode_finished):
 
+        self.print_Q_value(state)
+
+
         if self.first_experience:
             self.first_experience = False
         else:
@@ -189,3 +192,13 @@ class DDPG:
 
     def save_buffer(self):
         pickle.dump(self.replay_buffer, open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "wb"))
+
+    def print_Q_value(self, state):
+        string = "-"
+        Q_value = self.critic_network.evaluate([state], [self.action])
+        stroke_pos = 300*Q_value[0][0] + 30
+        print '[' + stroke_pos * string + '|' + (60-stroke_pos) * string + ']' , Q_value[0][0]
+
+
+
+
