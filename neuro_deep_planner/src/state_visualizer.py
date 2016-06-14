@@ -12,7 +12,7 @@ class CostmapVisualizer:
     def __init__(self):
 
         self.im_data = deque()
-        self.im_fig = plt.figure(1, figsize=(5, 40))
+        self.im_fig = plt.figure(1, figsize=(40, 40))
         self.im_ax = self.im_fig.add_subplot(111)
 
         self.im_fig.show()
@@ -20,7 +20,8 @@ class CostmapVisualizer:
 
     def set_data(self, data_3d):
 
-        self.im_im = self.im_ax.imshow(np.zeros(((len(data_3d[0])+10)*len(data_3d)+10, len(data_3d[0])*4+30), dtype='uint8'), cmap=plt.cm.gray, vmin=0, vmax=100,
+        self.im_im = self.im_ax.imshow(np.zeros(((len(data_3d[0])+10)*len(data_3d)+10, len(data_3d[0])*4+30),
+                                                dtype='uint8'), cmap=plt.cm.gray, vmin=0, vmax=100,
                                        interpolation="nearest", )
 
         h_divider = np.full((84, 10), 75)

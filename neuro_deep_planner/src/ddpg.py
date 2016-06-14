@@ -19,7 +19,7 @@ from state_visualizer import CostmapVisualizer
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 32              # How big are our batches
+BATCH_SIZE = 4              # How big are our batches
 
 GAMMA = 0.95                 # Discount factor
 
@@ -33,7 +33,7 @@ class DDPG:
     def __init__(self):
 
         # view the state batches
-        self.visualize_input = False
+        self.visualize_input = True
         if self.visualize_input:
             self.viewer = CostmapVisualizer()
 
@@ -179,6 +179,9 @@ class DDPG:
         else:
             # Store transition (s_t, a_t, r_t, s_{t+1}) in replay buffer
             self.replay_buffer.append((self.old_state, self.old_action, reward, state, is_episode_finished))
+
+        if is_episode_finished:
+            self.first_experience = True
 
         # Safe old state and old action for next experience
         self.old_state = state
