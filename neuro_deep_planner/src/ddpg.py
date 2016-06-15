@@ -82,6 +82,10 @@ class DDPG:
         # Initialize time step
         self.time_step = 0
 
+        # Save path for session
+        self.save_path = os.path.expanduser('~')+"/Desktop/my_model"
+        self.saver = tf.train.Saver()
+
         # Flag: don't learn the first experience
         self.first_experience = True
 
@@ -143,6 +147,11 @@ class DDPG:
             q_gradient_batch = self.grad_inv.invert(q_gradient_batch, action_batch_for_gradients)
 
             self.actor_network.train(q_gradient_batch, state_batch)
+
+            # Save model if necessary
+            if self.time_step % 50000 == 0:
+                # Append the step number to the checkpoint name:
+                self.saver.save(self.session, self.save_path, global_step=self.time_step)
 
             # Update time step
             self.time_step += 1

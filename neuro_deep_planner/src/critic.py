@@ -31,6 +31,7 @@ FINAL_WEIGHT_INIT = 0.003   # small init weights for output layer
 # For plotting
 PLOT_STEP = 10
 
+
 class CriticNetwork:
 
     def __init__(self, image_size, action_size, image_no, graph, summary_writer, session):
