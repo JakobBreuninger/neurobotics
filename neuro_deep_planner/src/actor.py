@@ -71,6 +71,7 @@ class ActorNetwork:
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
+            #self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(self.mean_parameters_gradients())
 
             self.summary_writer = summary_writer
 
@@ -228,3 +229,34 @@ class ActorNetwork:
             self.target_actions_mean_plot = [0, 0]
 
         return actions
+
+  #  def mean_parameters_gradients(self):
+
+#        print "params:"
+#        print len(self.parameters_gradients)
+#        print "var:"
+#        print self.parameters_gradients[0].get_shape()
+
+
+    #    gradient = self.parameters_gradients[0]
+
+        # Iterate over the batch
+    #    for i in range(1, batch_num):
+    #        # Iterate over the list of variables
+    #        for j in range(0, var_num):
+    #            gradient[j] += self.parameters_gradients[i][j]
+
+    #    # Divide through the batch size
+    #    for i in range(var_num):
+    #        gradient[i] = np.divide(gradient[i], batch_num)
+    #    print "gradients:"
+    #    self.parameters_gradients
+    #    print "gradient: "
+    #    print gradient
+    #    return zip(gradient, self.actor_variables)
+
+
+
+
+
+

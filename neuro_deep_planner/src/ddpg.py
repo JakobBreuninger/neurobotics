@@ -21,7 +21,7 @@ REPLAY_START_SIZE = 5000     # When do we start training
 
 BATCH_SIZE = 32              # How big are our batches
 
-GAMMA = 0.95                 # Discount factor
+GAMMA = 0.99                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -86,7 +86,7 @@ class DDPG:
         self.first_experience = True
 
         # Are we saving a new initial buffer or loading an existing one or neither?
-        self.save_initial_buffer = False
+        self.save_initial_buffer = True
         if not self.save_initial_buffer:
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
