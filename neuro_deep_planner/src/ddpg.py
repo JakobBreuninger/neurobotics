@@ -19,7 +19,7 @@ from state_visualizer import CostmapVisualizer
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
 REPLAY_START_SIZE = 5000     # When do we start training
 
-BATCH_SIZE = 32              # How big are our batches
+BATCH_SIZE = 16              # How big are our batches
 
 GAMMA = 0.99                 # Discount factor
 
@@ -90,7 +90,7 @@ class DDPG:
         self.first_experience = True
 
         # Are we saving a new initial buffer or loading an existing one or neither?
-        self.save_initial_buffer = True
+        self.save_initial_buffer = False
         if not self.save_initial_buffer:
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
@@ -110,7 +110,7 @@ class DDPG:
 
             state_batch = [data[0] for data in minibatch]
             action_batch = [data[1] for data in minibatch]
-            reward_batch = [data[2] - 0.01 for data in minibatch] # TESTTEST
+            reward_batch = [data[2] for data in minibatch] # TESTTEST
             next_state_batch = [data[3] for data in minibatch]
 
             if self.visualize_input:
