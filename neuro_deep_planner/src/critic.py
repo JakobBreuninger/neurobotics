@@ -22,9 +22,9 @@ FILTER3 = 32
 # Other Hyperparameters
 LEARNING_RATE = 0.001       # standard learning rate
 
-REGULARIZATION_DECAY = 0.00001  # for L2 Regularization
+REGULARIZATION_DECAY = 0.0  # for L2 Regularization
 
-TARGET_DECAY = 0.9999         # for target networks
+TARGET_DECAY = 0.999  # for target networks
 
 FINAL_WEIGHT_INIT = 0.003   # small init weights for output layer
 
@@ -44,9 +44,10 @@ class CriticNetwork:
             self.action_gradient_sum = np.zeros(2)
 
             # Define fully connected layer size
-            final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
-                                 RECEPTIVE_FIELD3)/STRIDE3 + 1
-            self.fully_size = (final_conv_height**2) * FILTER3
+            #final_conv_height = (((((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1) -
+             #                    RECEPTIVE_FIELD3)/STRIDE3 + 1
+            final_conv_height = (((image_size - RECEPTIVE_FIELD1)/STRIDE1 + 1) - RECEPTIVE_FIELD2)/STRIDE2 + 1
+            self.fully_size = (final_conv_height**2) * FILTER2
 
             # create actor network
             self.map_input = tf.placeholder("float", [None, image_size, image_size, image_no])
@@ -108,6 +109,10 @@ class CriticNetwork:
                                             RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
             biases_conv3 = create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2)
 
+            #weights_actions = create_variable([action_size, FULLY_LAYER1_SIZE], self.fully_size)
+            #weights_fully1 = create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
+            #biases_fully1 = create_variable([FULLY_LAYER1_SIZE], self.fully_size)
+
             weights_actions = create_variable([action_size, FULLY_LAYER1_SIZE], self.fully_size)
             weights_fully1 = create_variable([self.fully_size, FULLY_LAYER1_SIZE], self.fully_size)
             biases_fully1 = create_variable([FULLY_LAYER1_SIZE], self.fully_size)
@@ -123,11 +128,12 @@ class CriticNetwork:
                                         padding='VALID') + biases_conv1)
         conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
                            biases_conv2)
-        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
-                           biases_conv3)
+        #conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
+        #                   biases_conv3)
 
         # reshape output tensor to a rank 1 tensor
-        conv3_flat = tf.reshape(conv3, [-1, self.fully_size])
+        #conv3_flat = tf.reshape(conv1, [-1, self.fully_size])
+        conv3_flat = tf.reshape(conv2, [-1, self.fully_size])
 
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + tf.matmul(self.action_input, weights_actions) +
@@ -160,11 +166,12 @@ class CriticNetwork:
                                         padding='VALID') + biases_conv1)
         conv2 = tf.nn.relu(tf.nn.conv2d(conv1, weights_conv2, strides=[1, STRIDE2, STRIDE2, 1], padding='VALID') +
                            biases_conv2)
-        conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
-                           biases_conv3)
+        #conv3 = tf.nn.relu(tf.nn.conv2d(conv2, weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID') +
+        #                   biases_conv3)
 
         # reshape output tensor to a rank 1 tensor
-        conv3_flat = tf.reshape(conv3, [-1, self.fully_size])
+        #conv3_flat = tf.reshape(conv3, [-1, self.fully_size])
+        conv3_flat = tf.reshape(conv2, [-1, self.fully_size])
 
         # more operations
         fully1 = tf.nn.relu(tf.matmul(conv3_flat, weights_fully1) + tf.matmul(self.action_input_target,

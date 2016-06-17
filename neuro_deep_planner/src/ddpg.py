@@ -17,11 +17,11 @@ from state_visualizer import CostmapVisualizer
 
 # Hyper Parameters:
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
-REPLAY_START_SIZE = 5000     # When do we start training
+REPLAY_START_SIZE = 100      # When do we start training
 
 BATCH_SIZE = 16              # How big are our batches
 
-GAMMA = 0.99                 # Discount factor
+GAMMA = 0.8                  # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -63,8 +63,8 @@ class DDPG:
         self.summary_writer = tf.train.SummaryWriter('data')
 
         # Initialize actor and critic networks
-        self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session.graph,
-                                          self.summary_writer, self.session)
+        #self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session.graph,
+        #                                  self.summary_writer, self.session)
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, self.session.graph,
                                             self.summary_writer, self.session)
 
@@ -125,7 +125,8 @@ class DDPG:
 
             # Calculate y
             y_batch = []
-            next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
+            # next_action_batch = self.actor_network.target_evaluate(next_state_batch)
+            next_action_batch = np.full((BATCH_SIZE, 2), 0.5)
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
             for i in range(0, BATCH_SIZE):
@@ -138,7 +139,8 @@ class DDPG:
             self.critic_network.train(y_batch, state_batch, action_batch)
 
             # Update the actor policy using the sampled gradient:
-            action_batch_for_gradients = self.actor_network.evaluate(state_batch)
+            #action_batch_for_gradients = self.actor_network.evaluate(state_batch)
+            action_batch_for_gradients = np.full((BATCH_SIZE, 2), 0.5)
 
             # Get the action gradient batch
             q_gradient_batch = self.critic_network.get_action_gradient(state_batch, action_batch_for_gradients)
@@ -146,7 +148,7 @@ class DDPG:
             # Testing new gradient invert method
             q_gradient_batch = self.grad_inv.invert(q_gradient_batch, action_batch_for_gradients)
 
-            self.actor_network.train(q_gradient_batch, state_batch)
+            #self.actor_network.train(q_gradient_batch, state_batch)
 
             # Save model if necessary
             if self.time_step % 50000 == 0:
@@ -159,12 +161,13 @@ class DDPG:
     def get_action(self, state):
 
         # Select action a_t according to the current policy and exploration noise
-        self.network_action = self.actor_network.get_action(state)
-        self.noise_action = self.exploration_noise.noise()
-        self.action = self.network_action
+        #self.network_action = self.actor_network.get_action(state)
+        self.action = np.array([0.5, 0.5])
+        #self.noise_action = self.exploration_noise.noise()
+        #self.action = self.network_action
 
-        if self.noise_flag:
-            self.action += self.noise_action
+        #if self.noise_flag:
+         #   self.action += self.noise_action
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)
