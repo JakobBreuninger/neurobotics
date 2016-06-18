@@ -98,4 +98,3 @@ class ROSHandler:
             self.__new_setting_flag = False
 
         return output
-
