@@ -19,9 +19,9 @@ from state_visualizer import CostmapVisualizer
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
 REPLAY_START_SIZE = 1000     # When do we start training
 
-BATCH_SIZE = 16              # How big are our batches
+BATCH_SIZE = 32              # How big are our batches
 
-GAMMA = 0.8                  # Discount factor
+GAMMA = 0.95                  # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -29,6 +29,9 @@ SIGMA = 0.1                  # Variance of noise
 
 # Should we load a saved net
 PRE_TRAINED_NETS = False
+
+# Should we use an existing initial buffer with experiences
+NEW_INITIAL_BUFFER = False
 
 
 class DDPG:
@@ -71,7 +74,7 @@ class DDPG:
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, self.session.graph,
                                             self.summary_writer, self.session)
 
-        self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver(max_to_keep=3)
         self.save_path = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/my_model"
 
         # Should we load the pre-trained params
@@ -100,7 +103,7 @@ class DDPG:
         self.first_experience = True
 
         # Are we saving a new initial buffer or loading an existing one or neither?
-        self.save_initial_buffer = True
+        self.save_initial_buffer = NEW_INITIAL_BUFFER
         if not self.save_initial_buffer:
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
@@ -159,7 +162,7 @@ class DDPG:
             self.actor_network.train(q_gradient_batch, state_batch)
 
             # Save model if necessary
-            if self.time_step % 50000 == 0:
+            if self.time_step % 10000 == 0:
 
                 # Append the step number to the checkpoint name:
                 self.saver.save(self.session, self.save_path, global_step=self.time_step)
