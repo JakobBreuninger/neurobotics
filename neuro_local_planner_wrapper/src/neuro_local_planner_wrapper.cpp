@@ -361,7 +361,7 @@ namespace neuro_local_planner_wrapper
     {
         if (is_running_) {
 
-            double reward = -0.005;
+            double reward = 0.0;
 
             if (isCrashed(reward) || isSubGoalReached(reward)) {
 

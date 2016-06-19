@@ -153,6 +153,7 @@ void botCallback(const std_msgs::Bool new_round)
         // Get x and y coordinates and orientation for start point
         double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
         double y = (double)(rand() % 170)/100.0 + 2.0;
+        // double y = 2.0;
         //double o = (double)(rand() % 400)/100.0;
         double o = 0.0;
 
@@ -182,6 +183,7 @@ void botCallback(const std_msgs::Bool new_round)
         // TODO: automate the transform
         x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
         y = (double)(rand() % 170)/100.0 + 2.0;
+        //y = 2.0;
         // o = (double)(rand() % 400)/100.0;
         o = 0.0;
 
@@ -221,6 +223,7 @@ int main(int argc, char **argv)
     // Get x and y coordinates and orientation for start point
     double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
     double y = (double)(rand() % 170)/100.0 + 2.0;
+    // double y = 2.0;
     // double o = (double)(rand() % 400)/100.0;
     double o = 0.0;
 

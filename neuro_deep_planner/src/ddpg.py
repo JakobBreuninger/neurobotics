@@ -19,13 +19,20 @@ from state_visualizer import CostmapVisualizer
 REPLAY_BUFFER_SIZE = 10000   # How big can the buffer get
 REPLAY_START_SIZE = 100     # When do we start training
 
-BATCH_SIZE = 16              # How big are our batches
 
-GAMMA = 0.99                 # Discount factor
+BATCH_SIZE = 32              # How big are our batches
+
+GAMMA = 0.95                  # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
 SIGMA = 0.1                  # Variance of noise
+
+# Should we load a saved net
+PRE_TRAINED_NETS = False
+
+# Should we use an existing initial buffer with experiences
+NEW_INITIAL_BUFFER = False
 
 
 class DDPG:
@@ -68,7 +75,18 @@ class DDPG:
         self.critic_network = CriticNetwork(self.height, self.action_dim, self.depth, self.session.graph,
                                             self.summary_writer, self.session)
 
-        self.session.run(tf.initialize_all_variables())
+        self.saver = tf.train.Saver(max_to_keep=3)
+        self.save_path = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/my_model"
+
+        # Should we load the pre-trained params
+        if PRE_TRAINED_NETS:
+            self.saver.restore(self.session, self.save_path)
+
+        else:
+            # Initialize the variables and restore pretrained ones
+            self.session.run(tf.initialize_all_variables())
+            self.critic_network.restore_pretrained_weights()
+            self.actor_network.restore_pretrained_weights()
 
         self.summary_writer.add_graph(self.session.graph)
 
@@ -82,18 +100,12 @@ class DDPG:
         # Initialize time step
         self.time_step = 0
 
-        # Save path for session
-        self.save_path = os.path.expanduser('~')+"/Desktop/my_model"
-        self.saver = tf.train.Saver()
-
         # Flag: don't learn the first experience
         self.first_experience = True
 
         # Are we saving a new initial buffer or loading an existing one or neither?
-        self.save_initial_buffer = True
-        self.saved_buffer = False
-        if self.saved_buffer:
-
+        self.save_initial_buffer = NEW_INITIAL_BUFFER
+        if not self.save_initial_buffer:
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
             self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
@@ -112,7 +124,7 @@ class DDPG:
 
             state_batch = [data[0] for data in minibatch]
             action_batch = [data[1] for data in minibatch]
-            reward_batch = [data[2] for data in minibatch] # TESTTEST
+            reward_batch = [data[2] for data in minibatch]
             next_state_batch = [data[3] for data in minibatch]
 
             if self.visualize_input:
@@ -127,7 +139,7 @@ class DDPG:
 
             # Calculate y
             y_batch = []
-            next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
+            next_action_batch = self.actor_network.target_evaluate(next_state_batch)
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
 
             for i in range(0, BATCH_SIZE):
@@ -151,7 +163,8 @@ class DDPG:
             self.actor_network.train(q_gradient_batch, state_batch)
 
             # Save model if necessary
-            if self.time_step % 50000 == 0:
+            if self.time_step % 10000 == 0:
+
                 # Append the step number to the checkpoint name:
                 self.saver.save(self.session, self.save_path, global_step=self.time_step)
 
