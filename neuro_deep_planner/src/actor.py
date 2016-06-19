@@ -26,6 +26,9 @@ LEARNING_RATE = 0.001  # standard learning rate
 
 TARGET_DECAY = 0.9999   # for target networks
 
+# For plotting
+PLOT_STEP = 10
+
 
 class ActorNetwork:
 
@@ -68,8 +71,13 @@ class ActorNetwork:
 
             self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(zip(self.parameters_gradients,
                                                                                        self.actor_variables))
+            #self.optimizer = tf.train.AdamOptimizer(LEARNING_RATE).apply_gradients(self.mean_parameters_gradients())
 
             self.summary_writer = summary_writer
+
+            # Variables for plotting
+            self.actions_mean_plot = [0, 0]
+            self.target_actions_mean_plot = [0, 0]
 
             self.train_counter = 0
 
@@ -165,15 +173,24 @@ class ActorNetwork:
     def evaluate(self, state_batch):
 
         actions = self.sess.run(self.action_output, feed_dict={self.map_input: state_batch})
-
-        # Get the action outputs and add them to the summary
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
-        summary_action_0 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[0]',
-                                                              simple_value=np.asscalar(actions_mean[0]))])
-        summary_action_1 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[1]',
-                                                              simple_value=np.asscalar(actions_mean[1]))])
-        self.summary_writer.add_summary(summary_action_0, self.train_counter)
-        self.summary_writer.add_summary(summary_action_1, self.train_counter)
+        self.actions_mean_plot += actions_mean
+
+        # Only save files every 10 steps
+        if (self.train_counter % PLOT_STEP) == 0:
+
+            self.actions_mean_plot /= PLOT_STEP
+
+            summary_action_0 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[0]',
+                                                                  simple_value=np.asscalar(
+                                                                      self.actions_mean_plot[0]))])
+            summary_action_1 = tf.Summary(value=[tf.Summary.Value(tag='actions_mean[1]',
+                                                                  simple_value=np.asscalar(
+                                                                      self.actions_mean_plot[1]))])
+            self.summary_writer.add_summary(summary_action_0, self.train_counter)
+            self.summary_writer.add_summary(summary_action_1, self.train_counter)
+
+            self.actions_mean_plot = [0, 0]
 
         return actions
 
@@ -193,11 +210,53 @@ class ActorNetwork:
 
         # Get the target action outputs and add them to the summary
         actions_mean = np.mean(np.asarray(actions, dtype=float), axis=0)
-        summary_target_action_0 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[0]',
-                                                                     simple_value=np.asscalar(actions_mean[0]))])
-        summary_target_action_1 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[1]',
-                                                                     simple_value=np.asscalar(actions_mean[1]))])
-        self.summary_writer.add_summary(summary_target_action_0, self.train_counter)
-        self.summary_writer.add_summary(summary_target_action_1, self.train_counter)
+        self.target_actions_mean_plot += actions_mean
+
+        # Only save files every 10 steps
+        if (self.train_counter % PLOT_STEP) == 0:
+
+            self.target_actions_mean_plot /= PLOT_STEP
+
+            summary_target_action_0 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[0]',
+                                                                         simple_value=np.asscalar(
+                                                                             self.target_actions_mean_plot[0]))])
+            summary_target_action_1 = tf.Summary(value=[tf.Summary.Value(tag='target_actions_mean[1]',
+                                                                         simple_value=np.asscalar(
+                                                                             self.target_actions_mean_plot[1]))])
+            self.summary_writer.add_summary(summary_target_action_0, self.train_counter)
+            self.summary_writer.add_summary(summary_target_action_1, self.train_counter)
+
+            self.target_actions_mean_plot = [0, 0]
 
         return actions
+
+  #  def mean_parameters_gradients(self):
+
+#        print "params:"
+#        print len(self.parameters_gradients)
+#        print "var:"
+#        print self.parameters_gradients[0].get_shape()
+
+
+    #    gradient = self.parameters_gradients[0]
+
+        # Iterate over the batch
+    #    for i in range(1, batch_num):
+    #        # Iterate over the list of variables
+    #        for j in range(0, var_num):
+    #            gradient[j] += self.parameters_gradients[i][j]
+
+    #    # Divide through the batch size
+    #    for i in range(var_num):
+    #        gradient[i] = np.divide(gradient[i], batch_num)
+    #    print "gradients:"
+    #    self.parameters_gradients
+    #    print "gradient: "
+    #    print gradient
+    #    return zip(gradient, self.actor_variables)
+
+
+
+
+
+

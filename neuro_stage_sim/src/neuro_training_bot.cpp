@@ -153,7 +153,9 @@ void botCallback(const std_msgs::Bool new_round)
         // Get x and y coordinates and orientation for start point
         double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
         double y = (double)(rand() % 170)/100.0 + 2.0;
-        double o = (double)(rand() % 400)/100.0;
+        //double o = (double)(rand() % 400)/100.0;
+        double o = 0.0;
+
 
         // Send new position to stage
         geometry_msgs::Pose pose;
@@ -180,7 +182,8 @@ void botCallback(const std_msgs::Bool new_round)
         // TODO: automate the transform
         x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
         y = (double)(rand() % 170)/100.0 + 2.0;
-        o = (double)(rand() % 400)/100.0;
+        // o = (double)(rand() % 400)/100.0;
+        o = 0.0;
 
         // Send new goal position to move_base
         geometry_msgs::PoseStamped pose_stamped;
@@ -212,13 +215,14 @@ int main(int argc, char **argv)
     //move_base_pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 
     // Make sure that the global planner is aware of the new position
-    ros::Rate r(0.5);
+    ros::Rate r(0.2);
     r.sleep();
 
     // Get x and y coordinates and orientation for start point
     double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
     double y = (double)(rand() % 170)/100.0 + 2.0;
-    double o = (double)(rand() % 400)/100.0;
+    // double o = (double)(rand() % 400)/100.0;
+    double o = 0.0;
 
     // Send new position to stage
     geometry_msgs::PoseStamped pose;

@@ -267,12 +267,12 @@ namespace neuro_local_planner_wrapper
         {
             crash_counter_++;
             ROS_INFO("We crashed: %d", crash_counter_);
-            reward = -1;
+            reward = -1.0;
             return true;
         }
         else
         {
-            reward = (double)-cost/400;
+            //reward = (double)-cost/400;
             return false;
         }
     }
@@ -315,15 +315,15 @@ namespace neuro_local_planner_wrapper
         {
             goal_counter_++;
             ROS_INFO("We reached the goal: %d", goal_counter_);
-            reward = 1;
+            reward = 1.0;
             return true;
         }
         else
         {
-            if (reward == 0.0)
-            {
-                reward = 0.1/dist;
-            }
+            //if (reward == 0.0)
+            //{
+            //    reward = 0.1/dist;
+            //}
             return false;
         }
     }
@@ -361,7 +361,7 @@ namespace neuro_local_planner_wrapper
     {
         if (is_running_) {
 
-            double reward = 0.0;
+            double reward = -0.005;
 
             if (isCrashed(reward) || isSubGoalReached(reward)) {
 

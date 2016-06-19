@@ -21,7 +21,7 @@ REPLAY_START_SIZE = 100     # When do we start training
 
 BATCH_SIZE = 16              # How big are our batches
 
-GAMMA = 0.95                 # Discount factor
+GAMMA = 0.99                 # Discount factor
 
 MU = 0.0                     # Center value of noise
 THETA = 0.1                  # Specifies how strong noise values are pulled towards mu
@@ -77,9 +77,14 @@ class DDPG:
 
         # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
         self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
+        self.noise_flag = True
 
         # Initialize time step
         self.time_step = 0
+
+        # Save path for session
+        self.save_path = os.path.expanduser('~')+"/Desktop/my_model"
+        self.saver = tf.train.Saver()
 
         # Flag: don't learn the first experience
         self.first_experience = True
@@ -88,6 +93,7 @@ class DDPG:
         self.save_initial_buffer = True
         self.saved_buffer = False
         if self.saved_buffer:
+
             self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
         else:
             self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
@@ -101,20 +107,12 @@ class DDPG:
                 self.save_buffer()
                 self.save_initial_buffer = False
 
-            if (self.time_step % 100) == 0:
-                print("training step: ", self.time_step)
-                print "network action:"
-                print self.network_action
-                print "noise_action:"
-                print self.noise_action
-
             # Sample a random minibatch of N transitions from replay buffer
             minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
 
             state_batch = [data[0] for data in minibatch]
             action_batch = [data[1] for data in minibatch]
-            # action_batch = np.resize(action_batch, [BATCH_SIZE, 1])
-            reward_batch = [data[2] for data in minibatch]
+            reward_batch = [data[2] for data in minibatch] # TESTTEST
             next_state_batch = [data[3] for data in minibatch]
 
             if self.visualize_input:
@@ -131,9 +129,6 @@ class DDPG:
             y_batch = []
             next_action_batch = (self.actor_network.target_evaluate(next_state_batch))
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
-
-            # For debugging
-            self.actor_network.evaluate(next_state_batch)
 
             for i in range(0, BATCH_SIZE):
                 is_episode_finished = minibatch[i][4]
@@ -155,6 +150,11 @@ class DDPG:
 
             self.actor_network.train(q_gradient_batch, state_batch)
 
+            # Save model if necessary
+            if self.time_step % 50000 == 0:
+                # Append the step number to the checkpoint name:
+                self.saver.save(self.session, self.save_path, global_step=self.time_step)
+
             # Update time step
             self.time_step += 1
 
@@ -163,7 +163,13 @@ class DDPG:
         # Select action a_t according to the current policy and exploration noise
         self.network_action = self.actor_network.get_action(state)
         self.noise_action = self.exploration_noise.noise()
-        self.action = self.network_action + self.noise_action
+        self.action = self.network_action
+
+        if self.noise_flag:
+            self.action += self.noise_action
+
+        # Life q value output for this action and state
+        self.print_q_value(state, self.action)
 
         # TODO: Should we clip or limit these values?
         return self.action
@@ -191,14 +197,19 @@ class DDPG:
         self.old_action = self.action
 
     def save_buffer(self):
+
         pickle.dump(self.replay_buffer, open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "wb"))
 
-    def print_Q_value(self, state):
+
+    def print_q_value(self, state, action):
+
         string = "-"
-        Q_value = self.critic_network.evaluate([state], [self.action])
-        stroke_pos = 300*Q_value[0][0] + 30
-        print '[' + stroke_pos * string + '|' + (60-stroke_pos) * string + ']' , Q_value[0][0]
-
-
-
+        q_value = self.critic_network.evaluate([state], [action])
+        stroke_pos = 30 * q_value[0][0] + 30
+        if stroke_pos < 0:
+            stroke_pos = 0
+        elif stroke_pos > 60:
+            stroke_pos = 60
+        print '[' + stroke_pos * string + '|' + (60-stroke_pos) * string + ']', "Q: ", q_value[0][0], \
+            "\tt: ", self.time_step
 

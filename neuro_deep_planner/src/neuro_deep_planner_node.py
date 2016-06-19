@@ -27,7 +27,12 @@ def main():
             # Safe the past state and action + the reward and new state into the replay buffer
             agent.set_experience(ros_handler.state, ros_handler.reward, ros_handler.is_episode_finished)
 
+        elif ros_handler.new_setting():
+
+            agent.noise_flag = ros_handler.noise_flag
+
         else:
+
             # Train the network!
             agent.train()
 

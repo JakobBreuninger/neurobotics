@@ -4,6 +4,7 @@
 import rospy
 import numpy as np
 from neuro_local_planner_wrapper.msg import Transition
+from std_msgs.msg import Bool
 from geometry_msgs.msg import Twist, Vector3
 
 
@@ -22,11 +23,14 @@ class ROSHandler:
         self.reward = 0.0
         self.is_episode_finished = False
 
-        self.__sub = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
-                                      self.input_callback)
+        self.__sub_move_base = rospy.Subscriber("/move_base/NeuroLocalPlannerWrapper/transition", Transition,
+                                                self.input_callback)
+        self.__sub_setting = rospy.Subscriber("/noise_flag", Bool, self.setting_callback)
         self.__pub = rospy.Publisher("neuro_deep_planner/action", Twist, queue_size=10)
 
         self.__new_msg_flag = False
+        self.__new_setting_flag = False
+        self.noise_flag = True
 
     def input_callback(self, transition_msg):
 
@@ -58,10 +62,19 @@ class ROSHandler:
         # We have received a new msg
         self.__new_msg_flag = True
 
+    def setting_callback(self, setting_msg):
+
+        # If msg is received for the first time adjust parameters
+
+        self.noise_flag = setting_msg.data
+
+        # We have received a setting
+        self.__new_setting_flag = True
+
     def publish_action(self, action):
 
         # Generate msg output
-        vel_cmd = Twist(Vector3(action[0], 0, 0), Vector3(0, 0, action[1]))
+        vel_cmd = Twist(Vector3(action[0], action[1], 0), Vector3(0, 0, 0))
 
         # Send the action back
         self.__pub.publish(vel_cmd)
@@ -75,3 +88,14 @@ class ROSHandler:
             self.__new_msg_flag = False
 
         return output
+
+    def new_setting(self):
+
+        # Return true if new msg arrived only once for every new msg
+        output = False
+        if self.__new_setting_flag:
+            output = True
+            self.__new_setting_flag = False
+
+        return output
+
