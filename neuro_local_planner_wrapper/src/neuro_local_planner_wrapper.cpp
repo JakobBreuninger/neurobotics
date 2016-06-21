@@ -6,6 +6,8 @@
 // Register this planner as a BaseLocalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(neuro_local_planner_wrapper::NeuroLocalPlannerWrapper, nav_core::BaseLocalPlanner)
 
+double goalTolerance = 0.1;
+
 namespace neuro_local_planner_wrapper
 {
     // Constructor
@@ -311,7 +313,7 @@ namespace neuro_local_planner_wrapper
                            + pow((y_current_posen_map_frame  -goal_position.pose.position.y), 2.0));
 
         // More or less an arbitrary number. With above dist calculation this seems to be te best the robot can do...
-        if(dist < 0.2)
+        if(dist < goalTolerance)
         {
             goal_counter_++;
             ROS_INFO("We reached the goal: %d", goal_counter_);
@@ -391,7 +393,7 @@ namespace neuro_local_planner_wrapper
             } else {
 
                 // clear costmap/set all pixel gray
-                std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,70);
+                std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
                 customized_costmap_.data = data;
 
                 addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
@@ -507,28 +509,26 @@ namespace neuro_local_planner_wrapper
         std::vector<geometry_msgs::PoseStamped> global_plan_temp = global_plan_;
 
         //for(std::vector<geometry_msgs::PoseStamped>::reverse_iterator it = global_plan_.rbegin(); it != global_plan_.rend(); it++)
-        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_temp.begin(); it != global_plan_temp.end(); it++)
-        {
+        for(std::vector<geometry_msgs::PoseStamped>::iterator it = global_plan_temp.begin(); it != global_plan_temp.end(); it++) {
             // Transform pose from fixed frame of global plan to global frame of local cost map
             pose_fixed_frame = *it;
-            try
-            {
+            try {
                 pose_fixed_frame.header.stamp = customized_costmap_.header.stamp;
                 tf_->waitForTransform(customized_costmap_.header.frame_id, pose_fixed_frame.header.frame_id,
                                       customized_costmap_.header.stamp, ros::Duration(0.2));
                 tf_->transformPose(customized_costmap_.header.frame_id, pose_fixed_frame, pose_robot_base_frame);
             }
-            catch (tf::TransformException ex)
-            {
-                ROS_ERROR("%s",ex.what());
+            catch (tf::TransformException ex) {
+                ROS_ERROR("%s", ex.what());
             }
 
             // transformtion to costmap coordinates
             int x, y;
-            x = round(((pose_robot_base_frame.pose.position.x - customized_costmap_.info.origin.position.x)/costmap_->getSizeInMetersX())*customized_costmap_.info.width-0.5);
-            y = round(((pose_robot_base_frame.pose.position.y - customized_costmap_.info.origin.position.y)/costmap_->getSizeInMetersY())*customized_costmap_.info.height-0.5);
-            if ((x >=0) && (y >=0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height))
-            {
+            x = round(((pose_robot_base_frame.pose.position.x - customized_costmap_.info.origin.position.x) /
+                       costmap_->getSizeInMetersX()) * customized_costmap_.info.width - 0.5);
+            y = round(((pose_robot_base_frame.pose.position.y - customized_costmap_.info.origin.position.y) /
+                       costmap_->getSizeInMetersY()) * customized_costmap_.info.height - 0.5);
+            if ((x >= 0) && (y >= 0) && (x < customized_costmap_.info.width) && (y < customized_costmap_.info.height)) {
                 a_global_plan_map_coordinate.x = x;
                 a_global_plan_map_coordinate.y = y;
 
@@ -536,13 +536,64 @@ namespace neuro_local_planner_wrapper
             }
         }
 
-        int total_plan_pixel_number = global_plan_map_coordinates.size();
+        // add global plan as white pixels
+        for(std::vector<geometry_msgs::Point>::iterator it = global_plan_map_coordinates.begin(); it != global_plan_map_coordinates.end(); it++) {
+            a_global_plan_map_coordinate = *it;
+            customized_costmap_.data[a_global_plan_map_coordinate.x + a_global_plan_map_coordinate.y*customized_costmap_.info.width] = 0;
+        }
+
+        // add global plan as bright pixels with gradient
+        /*int total_plan_pixel_number = global_plan_map_coordinates.size();
         int counter = 0;
         for(std::vector<geometry_msgs::Point>::iterator it = global_plan_map_coordinates.begin(); it != global_plan_map_coordinates.end(); it++) {
             a_global_plan_map_coordinate = *it;
             customized_costmap_.data[a_global_plan_map_coordinate.x + a_global_plan_map_coordinate.y*customized_costmap_.info.width] = 50 - round((double)counter/(double)(total_plan_pixel_number-1)*50.0);
             counter++;
+        }*/
+
+        std::cout << pose_robot_base_frame.pose << std::endl;
+
+        // add global blob
+        int goal_tolerance_in_pixel = round(goalTolerance/(costmap_->getSizeInMetersX()/costmap_->getSizeInCellsX()));
+
+        geometry_msgs::Point blob_position_map_coordinate;
+
+        bool got_valid_blob_position = false;
+        for(std::vector<geometry_msgs::Point>::reverse_iterator it = global_plan_map_coordinates.rbegin(); it != global_plan_map_coordinates.rend(); it++)
+        {
+            blob_position_map_coordinate = *it;
+            if ((blob_position_map_coordinate.x - goal_tolerance_in_pixel > 0) &&
+                (blob_position_map_coordinate.y - goal_tolerance_in_pixel > 0) &&
+                (blob_position_map_coordinate.x + goal_tolerance_in_pixel < customized_costmap_.info.width) &&
+                (blob_position_map_coordinate.y + goal_tolerance_in_pixel < customized_costmap_.info.height))
+            {
+                got_valid_blob_position = true;
+                break;
+            }
         }
+
+        if (got_valid_blob_position) // goal is is somewhere in the current state representation
+        {
+            int pixel_to_blob_center;
+            for (int x = blob_position_map_coordinate.x - goal_tolerance_in_pixel; x <= blob_position_map_coordinate.x + goal_tolerance_in_pixel; x++)
+            {
+                for (int y = blob_position_map_coordinate.y - goal_tolerance_in_pixel; y <= blob_position_map_coordinate.y + goal_tolerance_in_pixel; y++)
+                {
+                    pixel_to_blob_center = round(sqrt(pow((blob_position_map_coordinate.x - x), 2.0)
+                                       + pow((blob_position_map_coordinate.y  - y), 2.0)));
+
+                    if (pixel_to_blob_center <= goal_tolerance_in_pixel)
+                    {
+                        customized_costmap_.data[x + y*customized_costmap_.info.width] = 0;
+                    }
+                }
+            }
+        }
+        else // goal is outside of the current state representation
+        {
+
+        }
+
     }
 
 };

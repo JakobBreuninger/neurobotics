@@ -11,6 +11,13 @@ ros::Publisher move_base_goal_pub;
 // Uncomment when using real amcl localization
 // ros::Publisher move_base_pose_pub;
 
+double getRandomDouble(double min, double max, double offset)
+{
+    int range = int((max - min) * 100);
+    ROS_ERROR("range: %d", range);
+    return (double)(rand() % range)/100 - min + offset;
+}
+
 void botCallback(const std_msgs::Bool new_round)
 {
     if(new_round.data)
@@ -151,10 +158,11 @@ void botCallback(const std_msgs::Bool new_round)
         // ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
 
         // Get x and y coordinates and orientation for start point
-        double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
-        double y = (double)(rand() % 170)/100.0 + 2.0;
-        // double y = 2.0;
-        //double o = (double)(rand() % 400)/100.0;
+        //double x = (double)(rand() % 130)/100.0 - 0.15 + 2.0;
+        //double y = (double)(rand() % 250)/100.0 + 2.0;
+
+        double x = getRandomDouble(-1.1, 0.75, 0.0);
+        double y = getRandomDouble(-1.2, 2.0, 0.0);
         double o = 0.0;
 
 
@@ -181,10 +189,8 @@ void botCallback(const std_msgs::Bool new_round)
 
         // Get x and y coordinates and orientation for start point + 2.0 for coordinate transform...
         // TODO: automate the transform
-        x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
-        y = (double)(rand() % 170)/100.0 + 2.0;
-        //y = 2.0;
-        // o = (double)(rand() % 400)/100.0;
+        x = getRandomDouble(-1.1, 0.75, 0.0);
+        y = getRandomDouble(-1.2, 2.0, 0.0);
         o = 0.0;
 
         // Send new goal position to move_base
@@ -221,10 +227,8 @@ int main(int argc, char **argv)
     r.sleep();
 
     // Get x and y coordinates and orientation for start point
-    double x = (double)(rand() % 130)/100.0 - 0.5 + 2.0;
-    double y = (double)(rand() % 170)/100.0 + 2.0;
-    // double y = 2.0;
-    // double o = (double)(rand() % 400)/100.0;
+    double x = getRandomDouble(-1.1, 0.75, 0.0);
+    double y = getRandomDouble(-1.2, 2.0, 0.0);
     double o = 0.0;
 
     // Send new position to stage
