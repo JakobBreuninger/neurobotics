@@ -200,9 +200,13 @@ StageNode::mapName(const char *name, size_t robotID, Stg::Model* mod) const
         }
         else
         {
-            snprintf(buf, sizeof(buf), "/robot_%u/%s", (unsigned int)robotID, name);
+            if ((unsigned int)robotID == 0)
+            {
+                snprintf(buf, sizeof(buf), "/%s", name);
+            }
+            else
+                snprintf(buf, sizeof(buf), "/robot_%u/%s", (unsigned int)robotID, name);
         }
-
         return buf;
     }
     else
@@ -217,6 +221,7 @@ StageNode::mapName(const char *name, size_t robotID, size_t deviceID, Stg::Model
 
     if ((positionmodels.size() > 1 ) || umn)
     {
+        //ROS_ERROR("YES");
         static char buf[100];
         std::size_t found = std::string(((Stg::Ancestor *) mod)->Token()).find(":");
 
@@ -233,6 +238,7 @@ StageNode::mapName(const char *name, size_t robotID, size_t deviceID, Stg::Model
     }
     else
     {
+        //ROS_ERROR("NO");
         static char buf[100];
         snprintf(buf, sizeof(buf), "/%s_%u", name, (unsigned int)deviceID);
         return buf;
@@ -276,6 +282,9 @@ StageNode::cmdvelReceived(int idx, const boost::shared_ptr<geometry_msgs::Twist 
     this->positionmodels[idx]->SetSpeed(msg->linear.x,
                                         msg->linear.y,
                                         msg->angular.z);
+    this->positionmodels[1]->SetSpeed(0.2, 0.0, 0.2);
+    this->positionmodels[2]->SetSpeed(0.2, 0.0, 0.2);
+    this->positionmodels[3]->SetSpeed(-0.2, 0.0, 0.2);
     this->base_last_cmd = this->sim_time;
 }
 
@@ -396,12 +405,12 @@ StageNode::SubscribeModels()
         new_robot->odom_pub = n_.advertise<nav_msgs::Odometry>(mapName(ODOM, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10);
         new_robot->ground_truth_pub = n_.advertise<nav_msgs::Odometry>(mapName(BASE_POSE_GROUND_TRUTH, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10);
         //new_robot->cmdvel_sub = n_.subscribe<geometry_msgs::Twist>(mapName(CMD_VEL, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::cmdvelReceived, this, r, _1));
-	    new_robot->cmdvel_sub = n_.subscribe<geometry_msgs::Twist>("/move_base/NeuroLocalPlannerWrapper/action", 10, boost::bind(&StageNode::cmdvelReceived, this, r, _1));
+	    new_robot->cmdvel_sub = n_.subscribe<geometry_msgs::Twist>("/move_base/NeuroLocalPlannerWrapper/action", 10, boost::bind(&StageNode::cmdvelReceived, this, 0, _1));
         //new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>(mapName(POSE, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::poseReceived, this, r, _1));
-        new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>("neuro_stage_ros/set_pose", 10, boost::bind(&StageNode::poseReceived, this, r, _1));
+        new_robot->pose_sub = n_.subscribe<geometry_msgs::Pose>("neuro_stage_ros/set_pose", 10, boost::bind(&StageNode::poseReceived, this, 0, _1));
 
         //new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>(mapName(POSESTAMPED, r, static_cast<Stg::Model*>(new_robot->positionmodel)), 10, boost::bind(&StageNode::poseStampedReceived, this, r, _1));
-        new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>("neuro_stage_ros/set_pose_stamped", 10, boost::bind(&StageNode::poseStampedReceived, this, r, _1));
+        new_robot->posestamped_sub = n_.subscribe<geometry_msgs::PoseStamped>("neuro_stage_ros/set_pose_stamped", 10, boost::bind(&StageNode::poseStampedReceived, this, 0, _1));
 
         for (size_t s = 0;  s < new_robot->lasermodels.size(); ++s)
         {
