@@ -14,9 +14,13 @@ ros::Publisher move_base_goal_pub;
 double getRandomDouble(double min, double max, double offset)
 {
     int range = int((max - min) * 100);
-    ROS_ERROR("range: %d", range);
     return (double)(rand() % range)/100 - min + offset;
 }
+
+ double x_max = 0.75;
+ double x_min = -1.1;
+ double y_max = 2.0;
+ double y_min = -1.2;
 
 void botCallback(const std_msgs::Bool new_round)
 {
@@ -161,8 +165,8 @@ void botCallback(const std_msgs::Bool new_round)
         //double x = (double)(rand() % 130)/100.0 - 0.15 + 2.0;
         //double y = (double)(rand() % 250)/100.0 + 2.0;
 
-        double x = getRandomDouble(-1.1, 0.75, 0.0);
-        double y = getRandomDouble(-1.2, 2.0, 0.0);
+        double x = getRandomDouble(x_min, x_max, 0.0);
+        double y = getRandomDouble(y_min, y_max, 0.0);
         double o = 0.0;
 
 
@@ -189,8 +193,8 @@ void botCallback(const std_msgs::Bool new_round)
 
         // Get x and y coordinates and orientation for start point + 2.0 for coordinate transform...
         // TODO: automate the transform
-        x = getRandomDouble(-1.1, 0.75, 0.0);
-        y = getRandomDouble(-1.2, 2.0, 0.0);
+        x = getRandomDouble(x_min, x_max, 0.0);
+        y = getRandomDouble(y_min, y_max, 0.0);
         o = 0.0;
 
         // Send new goal position to move_base
@@ -227,8 +231,8 @@ int main(int argc, char **argv)
     r.sleep();
 
     // Get x and y coordinates and orientation for start point
-    double x = getRandomDouble(-1.1, 0.75, 0.0);
-    double y = getRandomDouble(-1.2, 2.0, 0.0);
+    double x = getRandomDouble(x_min, x_max, 0.0);
+    double y = getRandomDouble(y_min, y_max, 0.0);
     double o = 0.0;
 
     // Send new position to stage

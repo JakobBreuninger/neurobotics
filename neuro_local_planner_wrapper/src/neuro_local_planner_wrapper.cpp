@@ -551,8 +551,6 @@ namespace neuro_local_planner_wrapper
             counter++;
         }*/
 
-        std::cout << pose_robot_base_frame.pose << std::endl;
-
         // add global blob
         int goal_tolerance_in_pixel = round(goalTolerance/(costmap_->getSizeInMetersX()/costmap_->getSizeInCellsX()));
 
@@ -562,8 +560,8 @@ namespace neuro_local_planner_wrapper
         for(std::vector<geometry_msgs::Point>::reverse_iterator it = global_plan_map_coordinates.rbegin(); it != global_plan_map_coordinates.rend(); it++)
         {
             blob_position_map_coordinate = *it;
-            if ((blob_position_map_coordinate.x - goal_tolerance_in_pixel > 0) &&
-                (blob_position_map_coordinate.y - goal_tolerance_in_pixel > 0) &&
+            if ((blob_position_map_coordinate.x - goal_tolerance_in_pixel >= 0) &&
+                (blob_position_map_coordinate.y - goal_tolerance_in_pixel >= 0) &&
                 (blob_position_map_coordinate.x + goal_tolerance_in_pixel < customized_costmap_.info.width) &&
                 (blob_position_map_coordinate.y + goal_tolerance_in_pixel < customized_costmap_.info.height))
             {
