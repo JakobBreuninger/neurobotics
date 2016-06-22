@@ -24,8 +24,8 @@ class CostmapVisualizer:
                                                 dtype='uint8'), cmap=plt.cm.gray, vmin=0, vmax=100,
                                        interpolation="nearest", )
 
-        h_divider = np.full((84, 10), 75)
-        v_divider = np.full((10, 366), 75)
+        h_divider = np.full((data_3d.shape[1], 10), 75)
+        v_divider = np.full((10, data_3d.shape[1]*4+30), 75)
 
         output = v_divider
 
