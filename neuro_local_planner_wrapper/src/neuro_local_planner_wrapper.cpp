@@ -6,7 +6,7 @@
 // Register this planner as a BaseLocalPlanner plugin
 PLUGINLIB_EXPORT_CLASS(neuro_local_planner_wrapper::NeuroLocalPlannerWrapper, nav_core::BaseLocalPlanner)
 
-double goalTolerance = 0.1;
+double goalTolerance = 0.2;
 
 namespace neuro_local_planner_wrapper
 {
@@ -186,7 +186,7 @@ namespace neuro_local_planner_wrapper
         customized_costmap_.info.resolution = (float)costmap_->getResolution(); // e.g. 0.05
         customized_costmap_.info.origin.position.x = -costmap_->getSizeInMetersX()/2.0; // e.g.-1.95
         customized_costmap_.info.origin.position.y = -costmap_->getSizeInMetersY()/2.0; // e.g.-1.95
-        customized_costmap_.info.origin.position.z = 0.0;
+        customized_costmap_.info.origin.position.z = 0.01; // looks better in simulation
         customized_costmap_.info.origin.orientation.x = 0.0;
         customized_costmap_.info.origin.orientation.y = 0.0;
         customized_costmap_.info.origin.orientation.z = 0.0;
@@ -265,7 +265,7 @@ namespace neuro_local_planner_wrapper
 
         int cost = costmap_->getCost(robot_x, robot_y);
 
-        if(cost >= 200)
+        if(cost >= 220)
         {
             crash_counter_++;
             ROS_INFO("We crashed: %d", crash_counter_);
@@ -396,9 +396,12 @@ namespace neuro_local_planner_wrapper
                 std::vector<int8_t> data(customized_costmap_.info.width*customized_costmap_.info.height,50);
                 customized_costmap_.data = data;
 
-                addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
+                // to_delete: ------
+                customized_costmap_.header.stamp = laser_scan.header.stamp;
 
                 addGlobalPlan(); // add global plan as white pixel with some gradient to indicate its direction
+
+                addLaserScanPoints(laser_scan); // add laser scan points as invalid/black pixel
 
                 // publish customized costmap for visualization
                 customized_costmap_pub_.publish(customized_costmap_); // publish costmap

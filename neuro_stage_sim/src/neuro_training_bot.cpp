@@ -4,7 +4,10 @@
 #include "geometry_msgs/Pose.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/PoseStamped.h"
+#include "nav_msgs/Odometry.h"
+
 #include <iostream>
+#include<vector>
 
 // Publisher and subscribers
 ros::Publisher stage_pub;
@@ -20,16 +23,42 @@ double y_max = 3.40;
 double y_min = 0.80;
 double o = 0.0;
 
+std::vector<nav_msgs::Odometry> robot_poses;
+
+
 double getRandomDouble(double min, double max, double offset)
 {
     int range = int((max - min) * 100);
     return (double)(rand() % range)/100 + min + offset;
 }
 
+double dist(double x_1, double y_1, double x_2, double y_2)
+{
+    return sqrt(pow((x_1 - x_2), 2.0) + pow((y_1 - y_2), 2.0));
+}
+
 void publishNewGoal()
 {
-    double x = getRandomDouble(x_min, x_max, 2.00);
-    double y = getRandomDouble(y_min, y_max, 2.00);
+    double x;
+    double y;
+
+    // Check if the point is unoccupied
+    bool collision = true;
+    while (collision)
+    {
+        collision = false;
+        x = getRandomDouble(x_min, x_max, 2.00);
+        y = getRandomDouble(y_min, y_max, 2.00);
+
+        for (long unsigned i = 0; i < robot_poses.size(); i++)
+        {
+            if (dist(x, y, robot_poses.at(i).pose.pose.position.x,robot_poses.at(i).pose.pose.position.y) < 0.8)
+            {
+                collision = true;
+            }
+        }
+    }
+
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.pose.position.z = 0.0;
     pose_stamped.pose.position.x = x;
@@ -42,8 +71,25 @@ void publishNewGoal()
 
 void publishNewPose()
 {
-    double x = getRandomDouble(x_min, x_max, 2.00);
-    double y = getRandomDouble(y_min, y_max, 2.00);
+    double x;
+    double y;
+
+    // Check if the point is unoccupied
+    bool collision = true;
+    while (collision)
+    {
+        collision = false;
+        x = getRandomDouble(x_min, x_max, 2.00);
+        y = getRandomDouble(y_min, y_max, 2.00);
+
+        for (long unsigned i = 0; i < robot_poses.size(); i++)
+        {
+            if (dist(x, y, robot_poses.at(i).pose.pose.position.x,robot_poses.at(i).pose.pose.position.y) < 0.8)
+            {
+                collision = true;
+            }
+        }
+    }
 
     geometry_msgs::Pose pose;
     pose.position.z = 0.0;
@@ -262,6 +308,15 @@ void newSampleAreaCallback(const std_msgs::Int8 newSampleAreaMsg)
     //std::cout << "Switched sample area to " << sampleArea << std::endl;
 }
 
+void robot_1_callback(nav_msgs::Odometry msg)
+{
+    robot_poses.at(0) = msg;
+}
+
+void robot_2_callback(nav_msgs::Odometry msg)
+{
+    robot_poses.at(1) = msg;
+}
 
 int main(int argc, char **argv)
 {
@@ -273,6 +328,25 @@ int main(int argc, char **argv)
     ros::Subscriber sub_planner = n.subscribe("/move_base/NeuroLocalPlannerWrapper/new_round", 1000, botCallback);
     ros::Subscriber sub_recovery = n.subscribe("/move_base/neuro_fake_recovery/new_round", 1000, botCallback);
     ros::Subscriber sub_area = n.subscribe("/sampleArea", 1000, newSampleAreaCallback);
+
+    ros::Subscriber sub_robot_1 = n.subscribe("/robot_1/base_pose_ground_truth", 1000, robot_1_callback);
+    ros::Subscriber sub_robot_2 = n.subscribe("/robot_1/base_pose_ground_truth", 1000, robot_2_callback);
+
+    nav_msgs::Odometry temp_pose;
+
+    // Robot 1 initial pose
+    temp_pose.pose.pose.position.x = 1.7;
+    temp_pose.pose.pose.position.y = 3.0;
+    temp_pose.pose.pose.position.z = 0.0;
+    temp_pose.pose.pose.orientation.z = 1.0;
+    robot_poses.push_back(temp_pose);
+
+    // Robot 2 initial pose
+    temp_pose.pose.pose.position.x = 1.7;
+    temp_pose.pose.pose.position.y = 0.5;
+    temp_pose.pose.pose.position.z = 0.0;
+    temp_pose.pose.pose.orientation.z = 1.0;
+    robot_poses.push_back(temp_pose);
 
     // Publishers
     stage_pub = n.advertise<geometry_msgs::Pose>("neuro_stage_ros/set_pose", 1);

@@ -48,6 +48,7 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <rosgraph_msgs/Clock.h>
+#include <visualization_msgs/Marker.h>
 
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -106,6 +107,11 @@ private:
     };
 
     std::vector<StageRobot const *> robotmodels_;
+
+    // Publishers for the dynamic obstacle markers
+    ros::Publisher vis_pub_1;
+    ros::Publisher vis_pub_2;
+    ros::Publisher vel_pub_;
 
     // Used to remember initial poses for soft reset
     std::vector<Stg::Pose> initial_poses;
@@ -283,8 +289,8 @@ StageNode::cmdvelReceived(int idx, const boost::shared_ptr<geometry_msgs::Twist 
                                         msg->linear.y,
                                         msg->angular.z);
     this->positionmodels[1]->SetSpeed(0.2, 0.0, 0.2);
-    this->positionmodels[2]->SetSpeed(0.2, 0.0, 0.2);
-    this->positionmodels[3]->SetSpeed(-0.2, 0.0, 0.2);
+    this->positionmodels[2]->SetSpeed(-0.3, 0.0, -0.3);
+
     this->base_last_cmd = this->sim_time;
 }
 
@@ -375,6 +381,10 @@ StageNode::SubscribeModels()
 {
     n_.setParam("/use_sim_time", true);
 
+    vis_pub_1 = n_.advertise<visualization_msgs::Marker>( "dynamic_obstacle_marker_1", 0 );
+    vis_pub_2 = n_.advertise<visualization_msgs::Marker>( "dynamic_obstacle_marker_2", 0 );
+    vel_pub_ = n_.advertise<visualization_msgs::Marker>( "velocity_command", 0 );
+
     for (size_t r = 0; r < this->positionmodels.size(); r++)
     {
         StageRobot* new_robot = new StageRobot;
@@ -463,6 +473,74 @@ void
 StageNode::WorldCallback()
 {
     boost::mutex::scoped_lock lock(msg_lock);
+
+    // Publish a marker for visualization of the two dynamic obstacles
+    visualization_msgs::Marker marker;
+
+    marker.header.frame_id = "map";
+    marker.header.stamp = ros::Time();
+    marker.ns = "my_namespace";
+    marker.id = 0;
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.pose.position.x = this->positionmodels[1]->GetGlobalPose().x;
+    marker.pose.position.y = this->positionmodels[1]->GetGlobalPose().y;
+    marker.pose.position.z = 0.125;
+    tf::Quaternion quaternion;
+    quaternion.setRPY(0.0, 0.0, this->positionmodels[1]->GetGlobalPose().a);
+    marker.pose.orientation.x = quaternion.getX();
+    marker.pose.orientation.y = quaternion.getY();
+    marker.pose.orientation.z = quaternion.getZ();
+    marker.pose.orientation.w = quaternion.getW();
+    marker.scale.x = 0.22;
+    marker.scale.y = 0.22;
+    marker.scale.z = 0.5;
+    marker.color.a = 1.0; // Don't forget to set the alpha!
+    marker.color.r = 0.15;
+    marker.color.g = 0.15;
+    marker.color.b = 0.15;
+
+    vis_pub_1.publish(marker);
+
+    // Now the second obstacle
+    marker.pose.position.x = this->positionmodels[2]->GetGlobalPose().x;
+    marker.pose.position.y = this->positionmodels[2]->GetGlobalPose().y;
+    marker.pose.position.z = 0.125;
+    quaternion.setRPY(0.0, 0.0, this->positionmodels[2]->GetGlobalPose().a);
+    marker.pose.orientation.x = quaternion.getX();
+    marker.pose.orientation.y = quaternion.getY();
+    marker.pose.orientation.z = quaternion.getZ();
+    marker.pose.orientation.w = quaternion.getW();
+
+    vis_pub_2.publish(marker);
+
+    // Publish a marker for visualization of the velocity commands
+    visualization_msgs::Marker marker_1;
+
+    marker_1.header.frame_id = "map";
+    marker_1.header.stamp = ros::Time();
+    marker_1.id = 0;
+    marker_1.type = visualization_msgs::Marker::ARROW;
+    marker_1.action = visualization_msgs::Marker::ADD;
+    geometry_msgs::Point start;
+    geometry_msgs::Point end;
+    start.x = this->positionmodels[0]->GetGlobalPose().x;
+    start.y = this->positionmodels[0]->GetGlobalPose().y;
+    start.z = 0.48;
+    end = start;
+    end.x -= this->positionmodels[0]->GetVelocity().x;
+    end.y -= this->positionmodels[0]->GetVelocity().y;
+    //end.x = 100;
+    //end.y = 100;
+    marker_1.points.push_back(start);
+    marker_1.points.push_back(end);
+    marker_1.scale.x = 0.05;
+    marker_1.scale.y = 0.12;
+    marker_1.scale.z = 0.12;
+    marker_1.color.a = 0.7;
+    marker_1.color.g = 1.0;
+
+    vel_pub_.publish(marker_1);
 
     this->sim_time.fromSec(world->SimTimeNow() / 1e6);
     // We're not allowed to publish clock==0, because it used as a special

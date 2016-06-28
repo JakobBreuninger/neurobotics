@@ -25,7 +25,7 @@ REPLAY_START_SIZE = 1000
 BATCH_SIZE = 32
 
 # How big is our discount factor for rewards
-GAMMA = 0.99
+GAMMA = 0.90
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
@@ -33,7 +33,7 @@ THETA = 0.1
 SIGMA = 0.1
 
 # Should we load a saved net
-PRE_TRAINED_NETS = True
+PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
 NET_SAVE_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/my_model"
@@ -43,13 +43,13 @@ NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained
 FILTER_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir) + "/pre_trained_filters/my_model"
 
 # Should we use an existing initial buffer with experiences
-NEW_INITIAL_BUFFER = True
+NEW_INITIAL_BUFFER = False
 
 # Visualize an initial state batch for debugging
 VISUALIZE_BUFFER = False
 
 # How often are we saving the net
-SAVE_STEP = 10000
+SAVE_STEP = 1000
 
 
 class DDPG:
@@ -81,8 +81,8 @@ class DDPG:
             self.action = np.zeros(2, dtype='float')
 
             # Initialize the grad inverter object to keep the action bounds
-            self.action_bounds = [[0.5, 0.5],
-                                  [-0.5, -0.5]]
+            self.action_bounds = [[0.3, 0.3],
+                                  [-0.3, -0.3]]
             self.grad_inv = GradInverter(self.action_bounds)
 
             # Initialize summary writers to plot variables during training

@@ -61,11 +61,5 @@ turtlebot
   name "turtlebot2"
 )
 
-turtlebot
-(
-
-  pose [ 1.7 3.75 0.0 0.0 ]
-  name "turtlebot2"
-)
 
 
