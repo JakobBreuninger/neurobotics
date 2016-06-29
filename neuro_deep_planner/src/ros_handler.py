@@ -15,8 +15,8 @@ class ROSHandler:
         # Initially assumed Input size, since init is false these values will be updated with the first received msg
         self.__init = False
         self.depth = 4
-        self.height = 84
-        self.width = 84
+        self.height = 86
+        self.width = 86
 
         self.state = np.zeros((self.width, self.height, self.depth), dtype='float')
 

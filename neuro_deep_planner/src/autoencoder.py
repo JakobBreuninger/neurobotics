@@ -15,24 +15,27 @@ from state_visualizer import CostmapVisualizer
 BATCH_SIZE = 16              # How big are our batches
 
 # Params of conv layers
-RECEPTIVE_FIELD1 = 8
+RECEPTIVE_FIELD1 = 4
 RECEPTIVE_FIELD2 = 4
-RECEPTIVE_FIELD3 = 3
+RECEPTIVE_FIELD3 = 4
+# RECEPTIVE_FIELD4 = 3
 
-STRIDE1 = 4
+STRIDE1 = 2
 STRIDE2 = 2
-STRIDE3 = 1
+STRIDE3 = 2
+# STRIDE4 = 1
 
 FILTER1 = 32
 FILTER2 = 32
 FILTER3 = 32
+# FILTER4 = 32
 
 # Other Hyperparameters
 LEARNING_RATE = 0.001       # standard learning rate
 
 
 # For plotting
-PLOT_STEP = 10
+PLOT_STEP = 100
 INPUT_OUTPUT_STEP = 100
 
 
@@ -41,7 +44,7 @@ class AutoEncoder:
     def __init__(self):
 
         # Hardcode input size and action size
-        self.height = 84
+        self.height = 86
         self.width = self.height
         self.depth = 4
 
@@ -51,7 +54,7 @@ class AutoEncoder:
         self.summary_writer = tf.train.SummaryWriter('data')
 
         # Define map input
-        self.map_input = tf.placeholder("float", [None, self.width, self.height, self.depth])
+        self.map_input = tf.placeholder("float", [None, 86, 86, self.depth])
 
         # Define trainable variables
         self.weights_conv1 = create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, self.depth, FILTER1],
@@ -65,6 +68,10 @@ class AutoEncoder:
         self.weights_conv3 = create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3],
                                              RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2, "weights_conv3")
         self.biases_conv3 = create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2, "biases_conv3")
+
+#        self.weights_conv4 = create_variable([RECEPTIVE_FIELD4, RECEPTIVE_FIELD4, FILTER3, FILTER4],
+#                                             RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3, "weights_conv4")
+#        self.biases_conv4 = create_variable([FILTER4], RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3, "biases_conv4")
 
         # Define expansion variables
         self.weights_conv1_transpose = create_variable([RECEPTIVE_FIELD1, RECEPTIVE_FIELD1, self.depth, FILTER1],
@@ -82,8 +89,14 @@ class AutoEncoder:
         self.weights_conv3_transpose = create_variable([RECEPTIVE_FIELD3, RECEPTIVE_FIELD3, FILTER2, FILTER3],
                                                        RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2,
                                                        "weights_conv3_tran")
-        self.biases_conv3_transpose = create_variable([FILTER3], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2,
+        self.biases_conv3_transpose = create_variable([FILTER2], RECEPTIVE_FIELD3 * RECEPTIVE_FIELD3 * FILTER2,
                                                       "biases_conv3_tran")
+
+#        self.weights_conv4_transpose = create_variable([RECEPTIVE_FIELD4, RECEPTIVE_FIELD4, FILTER3, FILTER4],
+#                                                       RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3,
+#                                                       "weights_conv4_tran")
+#        self.biases_conv4_transpose = create_variable([FILTER3], RECEPTIVE_FIELD4 * RECEPTIVE_FIELD4 * FILTER3,
+#                                                      "biases_conv4_tran")
 
         # Initialize auto-encoder and define the output
         self.map_output = self.get_output()
@@ -101,11 +114,14 @@ class AutoEncoder:
                                      "weights_conv2": self.weights_conv2,
                                      "biases_conv2":  self.biases_conv2,
                                      "weights_conv3": self.weights_conv3,
-                                     "biases_conv3":  self.biases_conv3})
+                                     "biases_conv3":  self.biases_conv3,
+                                     # "weights_conv4": self.weights_conv4,
+                                     # "biases_conv4":  self.biases_conv4
+                                     })
 
         # Either initialize the variables or load them
         self.session.run(tf.initialize_all_variables())
-        self.saver.restore(self.session, self.save_path+"")
+        # self.saver.restore(self.session, self.save_path+"")
 
         self.summary_writer.add_graph(self.session.graph)
 
@@ -140,18 +156,28 @@ class AutoEncoder:
         conv3 = tf.nn.conv2d(relu2, self.weights_conv3, strides=[1, STRIDE3, STRIDE3, 1], padding='VALID')
         relu3 = tf.nn.relu(conv3 + self.biases_conv3)
 
+#        conv4 = tf.nn.conv2d(relu3, self.weights_conv4, strides=[1, STRIDE4, STRIDE4, 1], padding='VALID')
+#        relu3 = tf.nn.relu(conv4 + self.biases_conv4)
+
         # Expand
-        conv_3_transpose_shape = tf.pack([BATCH_SIZE, 9, 9, FILTER2])
+#        conv_4_transpose_shape = tf.pack([BATCH_SIZE, 9, 9, FILTER3])
+#        conv4_transpose = tf.nn.conv2d_transpose(relu3, self.weights_conv4_transpose, conv_4_transpose_shape,
+#                                                 strides=[1, STRIDE4, STRIDE4, 1], padding='VALID')
+#        lin4_transpose = tf.nn.relu(conv4_transpose + self.biases_conv4_transpose)
+
+        conv_3_transpose_shape = tf.pack([BATCH_SIZE, 20, 20, FILTER2])
+#        conv3_transpose = tf.nn.conv2d_transpose(lin4_transpose, self.weights_conv3_transpose, conv_3_transpose_shape,
+#                                                 strides=[1, STRIDE3, STRIDE3, 1], padding='VALID')
         conv3_transpose = tf.nn.conv2d_transpose(relu3, self.weights_conv3_transpose, conv_3_transpose_shape,
                                                  strides=[1, STRIDE3, STRIDE3, 1], padding='VALID')
         lin3_transpose = tf.nn.relu(conv3_transpose + self.biases_conv3_transpose)
 
-        conv_2_transpose_shape = tf.pack([BATCH_SIZE, 20, 20, FILTER1])
+        conv_2_transpose_shape = tf.pack([BATCH_SIZE, 42, 42, FILTER1])
         conv2_transpose = tf.nn.conv2d_transpose(lin3_transpose, self.weights_conv2_transpose, conv_2_transpose_shape,
                                                  strides=[1, STRIDE2, STRIDE2, 1], padding='VALID')
         lin2_transpose = tf.nn.relu(conv2_transpose + self.biases_conv2_transpose)
 
-        conv_1_transpose_shape = tf.pack([BATCH_SIZE, 84, 84, 4])
+        conv_1_transpose_shape = tf.pack([BATCH_SIZE, 86, 86, 4])
         conv1_transpose = tf.nn.conv2d_transpose(lin2_transpose, self.weights_conv1_transpose, conv_1_transpose_shape,
                                                  strides=[1, STRIDE1, STRIDE1, 1], padding='VALID')
         lin1_transpose = tf.nn.relu(conv1_transpose + self.biases_conv1_transpose)
@@ -163,7 +189,7 @@ class AutoEncoder:
         # Sample a random minibatch of N transitions from replay buffer
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
 
-        state_batch = [data[0] for data in minibatch]
+        state_batch = np.asarray([data[0] for data in minibatch])
 
         # Get loss
         current_loss, output_batch, _ = self.session.run([self.loss, self.map_output, self.optimizer],
@@ -184,6 +210,7 @@ class AutoEncoder:
 
         # Visualize the actual input and output to compare
         if self.time_step % INPUT_OUTPUT_STEP == 0:
+
             input_batch_np = np.asarray(state_batch)
             output_batch_np = np.asarray(output_batch)
 
@@ -203,7 +230,7 @@ class AutoEncoder:
             print "t:", self.time_step
 
         # Save model if necessary
-        if self.time_step > 0 and self.time_step % 20000 == 0:
+        if self.time_step > 0 and self.time_step % 1000 == 0:
             # Append the step number to the checkpoint name:
             self.saver.save(self.session, self.save_path)
 

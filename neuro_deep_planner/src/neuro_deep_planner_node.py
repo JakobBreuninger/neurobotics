@@ -19,7 +19,6 @@ def main():
 
         # If we have a new msg we might have to execute an action and need to put the new experience in the buffer
         if ros_handler.new_msg():
-
             if not ros_handler.is_episode_finished:
                 # Send back the action to execute
                 ros_handler.publish_action(agent.get_action(ros_handler.state))
@@ -32,7 +31,6 @@ def main():
             agent.noise_flag = ros_handler.noise_flag
 
         else:
-
             # Train the network!
             agent.train()
 
