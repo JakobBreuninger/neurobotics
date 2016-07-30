@@ -325,9 +325,8 @@ namespace neuro_local_planner_wrapper
     {
         // Safe the
         int now = (int)ros::Time::now().toSec();
-        if (noise_flag_ && (now - temp_time_) > 30)
+        if (noise_flag_ && (now - temp_time_) > 3000)
         {
-            printf("im hating\n");
             temp_crash_count_ = crash_counter_;
             temp_goal_count_ = goal_counter_;
 
@@ -340,13 +339,11 @@ namespace neuro_local_planner_wrapper
 
             temp_time_ = now;
         }
-        if (!noise_flag_ && (now - temp_time_) > 30)
+        if (!noise_flag_ && (now - temp_time_) > 600)
         {
             std::pair<int, int> temp_count;
             temp_count.first = crash_counter_ - temp_crash_count_;
             temp_count.second = goal_counter_ - temp_goal_count_;
-
-            printf("im saving\n");
 
             plot_list_.push_back(temp_count);
 

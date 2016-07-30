@@ -1,25 +1,17 @@
 import numpy as np
-import random
-from collections import deque
 from ou_noise import OUNoise
 from critic import CriticNetwork
 from actor import ActorNetwork
 from grad_inverter import GradInverter
 import tensorflow as tf
+from data_manager import DataManager
 
 # For saving replay buffer
-import pickle
 import os
+import time
 
 # Visualization
 from state_visualizer import CostmapVisualizer
-
-
-# Maximum replay buffer size
-REPLAY_BUFFER_SIZE = 10000
-
-# Minimum replay buffer size before we start training
-REPLAY_START_SIZE = 1000
 
 # How big are our mini batches
 BATCH_SIZE = 32
@@ -98,6 +90,9 @@ class DDPG:
             # Initialize the saver to save the network params
             self.saver = tf.train.Saver()
 
+            # initialize the experience data manger
+            self.data_manager = DataManager(self.session.graph, self.session, BATCH_SIZE)
+
             # Should we load the pre-trained params?
             # If so: Load the full pre-trained net
             # Else:  Initialize all variables the overwrite the conv layers with the pretrained filters
@@ -108,8 +103,8 @@ class DDPG:
                 self.critic_network.restore_pretrained_weights(FILTER_LOAD_PATH)
                 self.actor_network.restore_pretrained_weights(FILTER_LOAD_PATH)
 
-            # Initialize replay buffer (ring buffer with max length)
-            self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
+            threads = tf.train.start_queue_runners(sess=self.session)
+            time.sleep(1)
 
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
             self.exploration_noise = OUNoise(self.action_dim, MU, THETA, SIGMA)
@@ -121,34 +116,20 @@ class DDPG:
             # Flag: don't learn the first experience
             self.first_experience = True
 
-            # Are we saving a new initial buffer or loading an existing one or neither?
-            self.save_initial_buffer = NEW_INITIAL_BUFFER
-            if not self.save_initial_buffer:
-                self.replay_buffer = pickle.load(open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "rb"))
-            else:
-                self.replay_buffer = deque(maxlen=REPLAY_BUFFER_SIZE)
-
             # After the graph has been filled add it to the summary writer
             self.summary_writer.add_graph(self.graph)
 
     def train(self):
 
         # Check if the buffer is big enough to start training
-        if self.get_buffer_size() > REPLAY_START_SIZE:
+        if self.data_manager.enough_data():
 
-            # Are we saving a pretrained buffer?
-            if self.save_initial_buffer:
-                self.save_buffer()
-                self.save_initial_buffer = False
-
-            # Sample a random minibatch of N transitions from replay buffer
-            minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
-
-            # Split the batch into the sub components
-            state_batch = [data[0] for data in minibatch]
-            action_batch = [data[1] for data in minibatch]
-            reward_batch = [data[2] for data in minibatch]
-            next_state_batch = [data[3] for data in minibatch]
+            # get the next random batch from the data manger
+            state_batch, \
+                action_batch, \
+                reward_batch, \
+                next_state_batch, \
+                is_episode_finished_batch = self.data_manager.get_next_batch()
 
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
@@ -165,8 +146,7 @@ class DDPG:
             next_action_batch = self.actor_network.target_evaluate(next_state_batch)
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
             for i in range(0, BATCH_SIZE):
-                is_episode_finished = minibatch[i][4]
-                if is_episode_finished:
+                if is_episode_finished_batch[i]:
                     y_batch.append([reward_batch[i]])
                 else:
                     y_batch.append(reward_batch[i] + GAMMA * q_value_batch[i])
@@ -190,6 +170,8 @@ class DDPG:
             # Update time step
             self.training_step += 1
 
+        self.data_manager.check_for_enqueue()
+
     def get_action(self, state):
 
         # Get the action
@@ -204,17 +186,14 @@ class DDPG:
 
         return self.action
 
-    def get_buffer_size(self):
-
-        return len(self.replay_buffer)
-
     def set_experience(self, state, reward, is_episode_finished):
 
         # Make sure we're saving a new old_state for the first experience of every episode
         if self.first_experience:
             self.first_experience = False
         else:
-            self.replay_buffer.append((self.old_state, self.old_action, reward, state, is_episode_finished))
+            self.data_manager.store_experience_to_file(self.old_state, self.old_action, reward, state,
+                                                        is_episode_finished)
 
         if is_episode_finished:
             self.first_experience = True
@@ -222,10 +201,6 @@ class DDPG:
         # Safe old state and old action for next experience
         self.old_state = state
         self.old_action = self.action
-
-    def save_buffer(self):
-
-        pickle.dump(self.replay_buffer, open(os.path.expanduser('~')+"/Desktop/initial_replay_buffer.p", "wb"))
 
     def print_q_value(self, state, action):
 
