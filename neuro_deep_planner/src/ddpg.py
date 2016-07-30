@@ -4,7 +4,7 @@ from collections import deque
 from ou_noise import OUNoise
 from critic import CriticNetwork
 from actor import ActorNetwork
-from tensorflow_grad_inverter import GradInverter
+from grad_inverter import GradInverter
 import tensorflow as tf
 
 # For saving replay buffer
@@ -25,7 +25,7 @@ REPLAY_START_SIZE = 1000
 BATCH_SIZE = 32
 
 # How big is our discount factor for rewards
-GAMMA = 0.90
+GAMMA = 0.95
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
@@ -36,11 +36,11 @@ SIGMA = 0.1
 PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
-NET_SAVE_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/my_model"
-NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/my_model"
+NET_SAVE_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/pre_trained_networks"
+NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/pre_trained_networks"
 
 # If we don't use a pretrained net we should load pre-trained filters from this path
-FILTER_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir) + "/pre_trained_filters/my_model"
+FILTER_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir) + "/pre_trained_filters/pre_trained_filters"
 
 # Should we use an existing initial buffer with experiences
 NEW_INITIAL_BUFFER = False
@@ -49,7 +49,7 @@ NEW_INITIAL_BUFFER = False
 VISUALIZE_BUFFER = False
 
 # How often are we saving the net
-SAVE_STEP = 1000
+SAVE_STEP = 100000
 
 
 class DDPG:
@@ -87,7 +87,7 @@ class DDPG:
 
             # Initialize summary writers to plot variables during training
             self.summary_op = tf.merge_all_summaries()
-            self.summary_writer = tf.train.SummaryWriter(os.path.expanduser('~')+'/data')
+            self.summary_writer = tf.train.SummaryWriter(os.path.expanduser('~')+'/tensorboard_data')
 
             # Initialize actor and critic networks
             self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session,
@@ -96,7 +96,7 @@ class DDPG:
                                                 self.summary_writer)
 
             # Initialize the saver to save the network params
-            self.saver = tf.train.Saver(max_to_keep=3)
+            self.saver = tf.train.Saver()
 
             # Should we load the pre-trained params?
             # If so: Load the full pre-trained net
@@ -185,7 +185,7 @@ class DDPG:
 
             # Save model if necessary
             if self.training_step > 0 and self.training_step % SAVE_STEP == 0:
-                self.saver.save(self.session, NET_SAVE_PATH)
+                self.saver.save(self.session, NET_SAVE_PATH, global_step=self.training_step)
 
             # Update time step
             self.training_step += 1

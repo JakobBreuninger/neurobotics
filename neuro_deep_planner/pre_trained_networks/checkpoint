@@ -1,2 +1,5 @@
-model_checkpoint_path: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/my_model"
-all_model_checkpoint_paths: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/my_model"
+model_checkpoint_path: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/pre_trained_networks-40"
+all_model_checkpoint_paths: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/pre_trained_networks-10"
+all_model_checkpoint_paths: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/pre_trained_networks-20"
+all_model_checkpoint_paths: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/pre_trained_networks-30"
+all_model_checkpoint_paths: "/home/breuning/catkin_ws/src/neuro_deep_planner/src/../pre_trained_networks/pre_trained_networks-40"
