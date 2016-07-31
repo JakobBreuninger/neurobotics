@@ -23,6 +23,8 @@
 
 #include <tf/tf.h>
 
+#include <fstream>
+
 // We use namespaces to keep things seperate under all the planners
 namespace neuro_local_planner_wrapper
 {
@@ -31,49 +33,31 @@ namespace neuro_local_planner_wrapper
         public:
 
             // Constructor
-            // --> Part of interface
             NeuroLocalPlannerWrapper();
 
             // Desctructor
-            // --> Part of interface
             ~NeuroLocalPlannerWrapper();
 
             // Initialize the planner
-            // --> Part of interface
-            // name:                some string, not important
-            // tf:                  this will tell the planner the robots location (i think)
-            // costmap_ros:         the costmap
-            // Return:              nothing
             void initialize(std::string name, tf::TransformListener* tf, costmap_2d::Costmap2DROS* costmap_ros);
 
             // Sets the plan
-            // --> Part of interface
-            // orig_global_plan:    this is the global plan we're supposed to follow (a vector of positions forms the
-            //                      line)
-            // Return:              True if plan was succesfully received...
             bool setPlan(const std::vector<geometry_msgs::PoseStamped>& orig_global_plan);
 
             // Compute the velocity commands
-            // --> Part of interface
-            // cmd_vel:             fill this vector with our velocity commands (the actual output we're producing)
-            // Return:              True if we didn't fail
             bool computeVelocityCommands(geometry_msgs::Twist& cmd_vel);
 
             // Tell if goal was reached
-            // --> Part of interface
-            // Return:              True if goal pose was reached
             bool isGoalReached();
 
         private:
 
             // Callback function for the subscriber to laser scan
-            // laser_scan:          this is the laser scan message
-            // Return:              nothing
             void buildStateRepresentation(sensor_msgs::LaserScan laser_scan);
 
             bool isCrashed(double& reward);
 
-            bool isSubGoalReached(double& reward);
+            bool isGoalReached(double& reward);
 
             void initializeCustomizedCostmap();
 
@@ -89,9 +73,10 @@ namespace neuro_local_planner_wrapper
 
             void addGlobalPlan();
 
+            void storeResult(const neuro_local_planner_wrapper::Transition& transition);
+
             // Listener to get our pose on the map
             tf::TransformListener* tf_;
-
 
             // --- Publisher & Subscriber ---
 
@@ -115,9 +100,8 @@ namespace neuro_local_planner_wrapper
             // Publisher for communication with TensorFlow
             ros::Publisher transition_msg_pub_;
 
-            ros::Publisher marker_array_pub_; // to_delete
-
-
+            // Publisher for toggling noise for exploration
+            ros::Publisher noise_flag_pub_;
 
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;
@@ -125,25 +109,20 @@ namespace neuro_local_planner_wrapper
             // Our actual costmap
             costmap_2d::Costmap2D* costmap_;
 
-
-
             // Customized costmap as state representation of the robot base
             nav_msgs::OccupancyGrid customized_costmap_;
 
             // Indicates whether episode is running or not e.g. reached the goal or crashed
             bool is_running_;
 
-
-            // Transition message with actual state representation which is four consecutive costmaps stacked together in one vector and actual reward
+            // Transition message with actual state representation which is four consecutive costmaps stacked together
+            // in one vector and actual reward
             neuro_local_planner_wrapper::Transition transition_msg_;
-
 
             visualization_msgs::MarkerArray marker_array_; // to_delete
 
-
             // last action received from network
             geometry_msgs::Twist action_;
-
 
             // Our current pose
             tf::Stamped<tf::Pose> current_pose_;
@@ -162,6 +141,22 @@ namespace neuro_local_planner_wrapper
 
             // Goal counter and crash counter to display in the output
             int goal_counter_, crash_counter_;
+
+            // Array for results
+            // time stamp
+            std::vector<int> time_stamp_storage_;
+            // reward (-1 for collision, +1 for goal reached)
+            std::vector<int> reward_storage;
+
+
+            // For plotting
+            int temp_time_;
+            bool noise_flag_;
+            int temp_crash_count_;
+            int temp_goal_count_;
+            std::vector<std::pair<int, int> > plot_list_;
+
+            int file_counter; // one file for 1000 entries
     };
 };
 #endif
