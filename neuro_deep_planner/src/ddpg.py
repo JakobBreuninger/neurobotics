@@ -22,8 +22,8 @@ GAMMA = 0.95
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.1
-SIGMA = 0.1
+THETA = 0.10
+SIGMA = 0.10
 
 # Should we load a saved net
 PRE_TRAINED_NETS = False

@@ -50,7 +50,7 @@ turtlebot
 turtlebot
 (
 
-  pose [ 1.7 3.0 0.0 0.0 ]
+  pose [ 1.7 3.3 0.0 0.0 ]
   name "turtlebot1"
 )
 

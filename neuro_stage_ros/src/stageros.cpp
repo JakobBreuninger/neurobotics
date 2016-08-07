@@ -288,6 +288,7 @@ StageNode::cmdvelReceived(int idx, const boost::shared_ptr<geometry_msgs::Twist 
     this->positionmodels[idx]->SetSpeed(msg->linear.x,
                                         msg->linear.y,
                                         msg->angular.z);
+
     this->positionmodels[1]->SetSpeed(0.2, 0.0, 0.2);
     this->positionmodels[2]->SetSpeed(-0.3, 0.0, -0.3);
 

@@ -148,6 +148,9 @@ namespace neuro_local_planner_wrapper
             // reward (-1 for collision, +1 for goal reached)
             std::vector<int> reward_storage;
 
+            // To close up an episode if it lasts too long
+            double max_time_;
+            double start_time_;
 
             // For plotting
             int temp_time_;
