@@ -5,6 +5,7 @@
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_msgs/Odometry.h"
+#include "nav_msgs/OccupancyGrid.h"
 
 #include <iostream>
 #include<vector>
@@ -16,14 +17,18 @@ ros::Publisher move_base_goal_pub;
 // Uncomment when using real amcl localization
 // ros::Publisher move_base_pose_pub;
 int sampleArea = 1;
+unsigned int pixel_position;
+bool costmap_there = false;
 
 double x_max = 1.20;
 double x_min = -1.40;
 double y_max = 3.40;
-double y_min = 0.80;
+double y_min = -1.50;
 double o = 0.0;
 
 std::vector<nav_msgs::Odometry> robot_poses;
+
+nav_msgs::OccupancyGrid current_costmap;
 
 
 double getRandomDouble(double min, double max, double offset)
@@ -52,7 +57,16 @@ void publishNewGoal()
 
         for (long unsigned i = 0; i < robot_poses.size(); i++)
         {
-            if (dist(x, y, robot_poses.at(i).pose.pose.position.x,robot_poses.at(i).pose.pose.position.y) < 0.8)
+            pixel_position = (unsigned int)(x / 0.05) + (unsigned int)(y / 0.05) * 200;
+
+            // First check for the costmap values
+            if (costmap_there && current_costmap.data.at(pixel_position) > 10)
+            {
+                collision = true;
+            }
+
+            // Now check for dynamic obstacles
+            if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
             {
                 collision = true;
             }
@@ -84,7 +98,16 @@ void publishNewPose()
 
         for (long unsigned i = 0; i < robot_poses.size(); i++)
         {
-            if (dist(x, y, robot_poses.at(i).pose.pose.position.x,robot_poses.at(i).pose.pose.position.y) < 0.8)
+            pixel_position = (unsigned int)(x / 0.05) + (unsigned int)(y / 0.05) * 200;
+
+            // First check for the costmap values
+            if (costmap_there && current_costmap.data.at(pixel_position) > 10)
+            {
+                collision = true;
+            }
+
+            // Now check for dynamic obstacles
+            if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
             {
                 collision = true;
             }
@@ -98,174 +121,18 @@ void publishNewPose()
     pose.orientation.z = 1.0;
     pose.orientation.w = o;
     stage_pub.publish(pose);
-
-
 }
 
 void botCallback(const std_msgs::Bool new_round)
 {
     if(new_round.data)
     {
-        // Set some random points and push them into a vector of points
-        /*geometry_msgs::Pose x_1, x_2, x_3, x_4, x_5, x_6, x_7, x_8, x_9, x_10, x_11, x_12, x_13, x_14, x_15, x_16, x_17,
-                            x_18, x_19, x_20, x_21, x_22, x_23, x_24, x_25, x_26, x_27, x_28, x_29, x_30;
-        std::vector<geometry_msgs::Pose> poses;
-        x_1.position.x = 2.06546545029;
-        x_1.position.y = 4.28590583801;
-        poses.push_back(x_1);
-
-        x_2.position.x = 5.44342184067;
-        x_2.position.y = 0.880249977112;
-        poses.push_back(x_2);
-
-        x_3.position.x = 1.84457874298;
-        x_3.position.y = 6.83638143539;
-        poses.push_back(x_3);
-
-        x_4.position.x = 6.35693025589;
-        x_4.position.y = 3.92254328728;
-        poses.push_back(x_4);
-
-        x_5.position.x = 7.59819555283;
-        x_5.position.y = 3.7883439064;
-        poses.push_back(x_5);
-
-        x_6.position.x = 8.85293960571;
-        x_6.position.y = 1.24048757553;
-        poses.push_back(x_6);
-
-        x_7.position.x = 7.17635631561;
-        x_7.position.y = 5.95679283142;
-        poses.push_back(x_7);
-
-        x_8.position.x = 6.53284931183;
-        x_8.position.y = 9.24268722534;
-        poses.push_back(x_8);
-
-        x_9.position.x = 2.5139811039;
-        x_9.position.y = 4.14342975616;
-        poses.push_back(x_9);
-
-        x_10.position.x = 7.66414833069;
-        x_10.position.y = 7.6863527298;
-        poses.push_back(x_10);
-
-        x_11.position.x = 7.77705907822;
-        x_11.position.y = 7.32463550568;
-        poses.push_back(x_11);
-
-        x_12.position.x = -1.1419 + 2.0;
-        x_12.position.y = 2.525 + 2.0;
-        poses.push_back(x_12);
-
-        x_13.position.x = 0.4474 + 2.0;
-        x_13.position.y = 2.723 + 2.0;
-        poses.push_back(x_13);
-
-        x_14.position.x = 0.767 + 2.0;
-        x_14.position.y = 5.6718 + 2.0;
-        poses.push_back(x_14);
-
-        x_15.position.x = 3.092 + 2.0;
-        x_15.position.y = 4.637 + 2.0;
-        poses.push_back(x_15);
-
-        x_16.position.x = -0.941 + 2.0;
-        x_16.position.y = 6.898 + 2.0;
-        poses.push_back(x_16);
-
-        x_17.position.x = 0.673 + 2.0;
-        x_17.position.y = 5.64 + 2.0;
-        poses.push_back(x_17);
-
-        x_18.position.x = 7.022 + 2.0;
-        x_18.position.y = -1.060 + 2.0;
-        poses.push_back(x_18);
-
-        x_19.position.x = 4.614 + 2.0;
-        x_19.position.y = -0.115 + 2.0;
-        poses.push_back(x_19);
-
-        x_20.position.x = 3.03 + 2.0;
-        x_20.position.y = 2.57 + 2.0;
-        poses.push_back(x_20);
-
-        x_21.position.x = 5.57 + 2.0;
-        x_21.position.y = 1.33 + 2.0;
-        poses.push_back(x_21);
-
-        x_22.position.x = 4.80 + 2.0;
-        x_22.position.y = -0.98 + 2.0;
-        poses.push_back(x_22);
-
-        x_23.position.x = 3.62 + 2.0;
-        x_23.position.y = 7.04 + 2.0;
-        poses.push_back(x_23);
-
-        x_24.position.x = 4.242 + 2.0;
-        x_24.position.y = 1.864 + 2.0;
-        poses.push_back(x_24);
-
-        x_25.position.x = -0.06 + 2.0;
-        x_25.position.y = 4.875 + 2.0;
-        poses.push_back(x_25);
-
-        x_26.position.x = 3.95 + 2.0;
-        x_26.position.y = 5.33 + 2.0;
-        poses.push_back(x_26);
-
-        x_27.position.x = 7.21 + 2.0;
-        x_27.position.y = 4.73 + 2.0;
-        poses.push_back(x_27);
-
-        x_28.position.x = 0.28 + 2.0;
-        x_28.position.y = 0.96 + 2.0;
-        poses.push_back(x_28);
-
-        x_29.position.x = 4.58 + 2.0;
-        x_29.position.y = 1.23 + 2.0;
-        poses.push_back(x_29);
-
-        x_30.position.x = 7.19 + 2.0;
-        x_30.position.y = 7.05 + 2.0;
-        poses.push_back(x_30);
-
-        // Now randomly choose two points to use as start pose and goal pose and make sure they are different ones
-        srand((unsigned int)time(NULL));
-        unsigned long start = rand() % poses.size();
-        unsigned long goal = rand() % poses.size();
-        while (start == goal)
-        {
-            goal = rand() % poses.size();
-        }*/
-
-        // ROS_ERROR("Start: %d, Goal: %d", (int)start, (int)goal);
-
-        // Get x and y coordinates and orientation for start point
-        //double x = (double)(rand() % 130)/100.0 - 0.15 + 2.0;
-        //double y = (double)(rand() % 250)/100.0 + 2.0;
-
-
-
-
         // Send new position to stage
         publishNewPose();
-
-
-        // Uncomment when actually using amcl localization
-        /*// Send new position to move_base
-        geometry_msgs::PoseWithCovarianceStamped pose_with_co;
-        pose_with_co.pose.pose.orientation.z = 1.0;
-        pose_with_co.pose.pose.position = poses.at(start).position;
-        pose_with_co.header.frame_id = "map";
-        move_base_pose_pub.publish(pose_with_co);*/
 
         // Make sure that the global planner is aware of the new position
         ros::Rate r(1);
         r.sleep();
-
-        // TODO: automate the transform
-
 
         // Send new goal position to move_base
         publishNewGoal();
@@ -304,8 +171,6 @@ void newSampleAreaCallback(const std_msgs::Int8 newSampleAreaMsg)
         default:
             1;
     }
-
-    //std::cout << "Switched sample area to " << sampleArea << std::endl;
 }
 
 void robot_1_callback(nav_msgs::Odometry msg)
@@ -318,6 +183,12 @@ void robot_2_callback(nav_msgs::Odometry msg)
     robot_poses.at(1) = msg;
 }
 
+void costmapCallback(nav_msgs::OccupancyGrid msg)
+{
+    costmap_there = true;
+    current_costmap = msg;
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "neuro_training_bot");
@@ -328,15 +199,17 @@ int main(int argc, char **argv)
     ros::Subscriber sub_planner = n.subscribe("/move_base/NeuroLocalPlannerWrapper/new_round", 1000, botCallback);
     ros::Subscriber sub_recovery = n.subscribe("/move_base/neuro_fake_recovery/new_round", 1000, botCallback);
     ros::Subscriber sub_area = n.subscribe("/sampleArea", 1000, newSampleAreaCallback);
+    ros::Subscriber sub_costmap = n.subscribe("/move_base/global_costmap/costmap", 1000, costmapCallback);
+
 
     ros::Subscriber sub_robot_1 = n.subscribe("/robot_1/base_pose_ground_truth", 1000, robot_1_callback);
-    ros::Subscriber sub_robot_2 = n.subscribe("/robot_1/base_pose_ground_truth", 1000, robot_2_callback);
+    ros::Subscriber sub_robot_2 = n.subscribe("/robot_2/base_pose_ground_truth", 1000, robot_2_callback);
 
     nav_msgs::Odometry temp_pose;
 
     // Robot 1 initial pose
     temp_pose.pose.pose.position.x = 1.7;
-    temp_pose.pose.pose.position.y = 3.0;
+    temp_pose.pose.pose.position.y = 3.3;
     temp_pose.pose.pose.position.z = 0.0;
     temp_pose.pose.pose.orientation.z = 1.0;
     robot_poses.push_back(temp_pose);
@@ -356,7 +229,7 @@ int main(int argc, char **argv)
     //move_base_pose_pub = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("initialpose", 1);
 
     // Make sure that the global planner is aware of the new position
-    ros::Rate r(0.2);
+    ros::Rate r(0.1);
     r.sleep();
 
     // Send new position to stage

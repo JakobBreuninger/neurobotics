@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /TF1/Frames1
         - /TF1/Tree1
+        - /Map1
         - /Local Planning1/Costmap1
         - /Global Planning1/Costmap1
         - /Marker3
@@ -567,7 +568,7 @@ Visualization Manager:
       Marker Topic: /velocity_command
       Name: Marker
       Namespaces:
-        my_namespace: true
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -590,22 +591,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.7858
+      Distance: 10.6203
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.66772
-        Y: 3.22855
-        Z: -0.151642
+        X: 0.285086
+        Y: 0.0842559
+        Z: 0.00316155
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.4748
+      Pitch: 1.5698
       Target Frame: base_link
       Value: Orbit (rviz)
-      Yaw: 1.625
+      Yaw: 4.40002
     Saved: ~
 Window Geometry:
   Displays:

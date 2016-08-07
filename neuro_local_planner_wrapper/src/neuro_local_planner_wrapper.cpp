@@ -100,6 +100,9 @@ namespace neuro_local_planner_wrapper
             temp_crash_count_ = 0;
             temp_goal_count_ = 0;
 
+            // To close up too long episodes
+            max_time_ = 60;
+
             // We are now initialized
             initialized_ = true;
         }
@@ -222,7 +225,7 @@ namespace neuro_local_planner_wrapper
 
         // This causes a crash not just a critical positions but a little bit before the wall
         // TODO: could be solved nicer by using a different inscribed radius, then: >= 253
-        if(costmap_->getCost((unsigned int)robot_x, (unsigned int)robot_y) >= 230)
+        if(costmap_->getCost((unsigned int)robot_x, (unsigned int)robot_y) >= 170)
         {
             crash_counter_++;
             ROS_INFO("We crashed: %d", crash_counter_);
@@ -374,6 +377,9 @@ namespace neuro_local_planner_wrapper
 
             if (isCrashed(reward) || isGoalReached(reward))
             {
+                // New episode so restart the time count
+                start_time_ = ros::Time::now().toSec();
+
                 // This is the last transition published in this episode
                 is_running_ = false;
 
@@ -399,6 +405,22 @@ namespace neuro_local_planner_wrapper
 
                 // increment seq for next costmap
                 transition_msg_.header.seq = transition_msg_.header.seq + 1;
+            }
+            else if (ros::Time::now().toSec() - start_time_ > max_time_)
+            {
+                // New episode so restart the time count
+                start_time_ = ros::Time::now().toSec();
+
+                // This is the last transition published in this episode
+                is_running_ = false;
+
+                // Stop moving
+                setZeroAction();
+
+                // Publish that a new round can be started with the stage_sim_bot
+                std_msgs::Bool new_round;
+                new_round.data = 1;
+                state_pub_.publish(new_round);
             }
             else
             {
