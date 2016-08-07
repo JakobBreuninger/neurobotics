@@ -18,7 +18,7 @@ class ROSHandler:
         self.height = 86
         self.width = 86
 
-        self.state = np.zeros((self.width, self.height, self.depth), dtype='float')
+        self.state = np.zeros((self.width, self.height, self.depth), dtype='int8')
 
         self.reward = 0.0
         self.is_episode_finished = False
@@ -40,7 +40,7 @@ class ROSHandler:
             self.depth = transition_msg.depth
             self.width = transition_msg.width
             self.height = transition_msg.height
-            self.state = np.zeros((self.depth, self.width, self.height), dtype='float')
+            self.state = np.zeros((self.depth, self.width, self.height), dtype='int8')
             self.__init = True
 
         # Lets update the new reward
@@ -51,13 +51,9 @@ class ROSHandler:
 
         # Lets update the new costmap its possible that we need to switch some axes here...
         if not self.is_episode_finished:
-            temp_state = np.asarray(transition_msg.state_representation).reshape(self.depth, self.height, self.width).\
-                swapaxes(1, 2)
+            temp_state = np.asarray(transition_msg.state_representation, dtype='int8').reshape(self.depth, self.height,
+                                                                                               self.width).swapaxes(1, 2)
             self.state = np.rollaxis(temp_state, 0, 3)
-
-            # Normalize!
-            self.state = self.state.astype(float)
-            self.state = np.divide(self.state, 100.0)
 
         # We have received a new msg
         self.__new_msg_flag = True
