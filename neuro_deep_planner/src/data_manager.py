@@ -3,8 +3,8 @@ import os.path
 import numpy as np
 
 # Parameters:
-NUM_EXPERIENCES = 1000		# How many experiences stored per file
-MIN_FILE_NUM = 2            # How many files at minimum do we need for training
+NUM_EXPERIENCES = 100		# How many experiences stored per file
+MIN_FILE_NUM = 2           # How many files at minimum do we need for training
 PRE_STORED_DATA_FILES = 0   # How many files are already stored in our Date folder
 
 MIN_FILES_IN_QUEUE = 10     # Files are added when this Number is reached
@@ -74,16 +74,18 @@ class DataManager:
         _, serialized_experience = reader.read(self.filename_queue)
 
         features = tf.parse_single_example(serialized_experience, features={
-            'state': tf.FixedLenFeature([86*86*4], tf.float32),
+            'state': tf.FixedLenFeature([], tf.string),
             'action': tf.FixedLenFeature([2], tf.float32),
             'reward': tf.FixedLenFeature([], tf.float32),
-            'next_state': tf.FixedLenFeature([86*86*4], tf.float32),
+            'next_state': tf.FixedLenFeature([], tf.string),
             'is_episode_finished': tf.FixedLenFeature([], tf.int64)})
 
-        state = features['state']
+        state = tf.decode_raw(features['state'], tf.uint8)
+        state.set_shape([86*86*4])
         action = features['action']
         reward = features['reward']
-        next_state = features['next_state']
+        next_state = tf.decode_raw(features['next_state'], tf.uint8)
+        next_state.set_shape([86*86*4])
         is_episode_finished = features['is_episode_finished']
 
         state = tf.reshape(state, [86, 86, 4])
@@ -132,12 +134,26 @@ class DataManager:
     # stores experiences sequentially to files
     def store_experience_to_file(self, state, action, reward, next_state, is_episode_finished):
         # write experience to file (s_t, a_t, r_t, s_{t+1})
-        example = tf.train.Example(features=tf.train.Features(feature={
+
+        state_raw = state.tostring()
+        action_raw = action.tostring()
+        reward_raw = str(reward)
+        next_state_raw = next_state.tostring()
+        is_episode_finished_raw = str(is_episode_finished)
+
+        '''example = tf.train.Example(features=tf.train.Features(feature={
                 'state': tf.train.Feature(float_list=tf.train.FloatList(value=state.flatten().tolist())),
                 'action': tf.train.Feature(float_list=tf.train.FloatList(value=action.tolist())),
                 'reward': tf.train.Feature(float_list=tf.train.FloatList(value=[reward])),
                 'next_state': tf.train.Feature(float_list=tf.train.FloatList(value=next_state.flatten().tolist())),
-                'is_episode_finished': tf.train.Feature(int64_list=tf.train.Int64List(value=[is_episode_finished]))}))
+                'is_episode_finished': tf.train.Feature(int64_list=tf.train.Int64List(value=[is_episode_finished]))}))'''
+        example = tf.train.Example(features=tf.train.Features(feature={
+            'state': tf.train.Feature(bytes_list=tf.train.BytesList(value=[state_raw])),
+            'action': tf.train.Feature(float_list=tf.train.FloatList(value=action.tolist())),
+            'reward': tf.train.Feature(float_list=tf.train.FloatList(value=[reward])),
+            'next_state': tf.train.Feature(bytes_list=tf.train.BytesList(value=[next_state_raw])),
+            'is_episode_finished': tf.train.Feature(int64_list=tf.train.Int64List(value=[is_episode_finished]))
+            }))
 
         self.writer.write(example.SerializeToString())
 

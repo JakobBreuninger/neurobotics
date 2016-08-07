@@ -13,6 +13,7 @@ import time
 # Visualization
 from state_visualizer import CostmapVisualizer
 
+
 # How big are our mini batches
 BATCH_SIZE = 32
 
@@ -66,7 +67,7 @@ class DDPG:
             self.action_dim = 2
 
             # Initialize the current action and the old action and old state for setting experiences
-            self.old_state = np.zeros((self.width, self.height, self.depth), dtype='float')
+            self.old_state = np.zeros((self.width, self.height, self.depth), dtype='int8')
             self.old_action = np.ones(2, dtype='float')
             self.network_action = np.zeros(2, dtype='float')
             self.noise_action = np.zeros(2, dtype='float')
@@ -131,6 +132,9 @@ class DDPG:
                 next_state_batch, \
                 is_episode_finished_batch = self.data_manager.get_next_batch()
 
+            state_batch = np.divide(state_batch, 100.0)
+            next_state_batch = np.divide(next_state_batch, 100.0)
+
             # Are we visualizing the first state batch for debugging?
             # If so: We have to scale up the values for grey scale before plotting
             if self.visualize_input:
@@ -173,6 +177,11 @@ class DDPG:
         self.data_manager.check_for_enqueue()
 
     def get_action(self, state):
+
+        # normalize the state
+        state = state.astype(float)
+        state = np.divide(state, 100.0)
+
 
         # Get the action
         self.action = self.actor_network.get_action(state)
