@@ -25,6 +25,10 @@ MU = 0.0
 THETA = 0.10
 SIGMA = 0.10
 
+# Action boundaries
+A0_BOUNDS = [-0.3, 0.3]
+A1_BOUNDS = [-0.3, 0.3]
+
 # Should we load a saved net
 PRE_TRAINED_NETS = False
 
@@ -34,6 +38,15 @@ NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained
 
 # If we don't use a pretrained net we should load pre-trained filters from this path
 FILTER_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir) + "/pre_trained_filters/pre_trained_filters"
+
+# Data Directory
+DATA_PATH = os.path.expanduser('~') + '/data_rl_nav'
+
+# path to tensorboard data
+TFLOG_PATH = DATA_PATH + '/tf_logs'
+
+# path to experience files
+EXPERIENCE_PATH = DATA_PATH + '/experiences'
 
 # Should we use an existing initial buffer with experiences
 NEW_INITIAL_BUFFER = False
@@ -74,13 +87,15 @@ class DDPG:
             self.action = np.zeros(2, dtype='float')
 
             # Initialize the grad inverter object to keep the action bounds
-            self.action_bounds = [[0.3, 0.3],
-                                  [-0.3, -0.3]]
-            self.grad_inv = GradInverter(self.action_bounds)
+            self.grad_inv = GradInverter(A0_BOUNDS, A1_BOUNDS, self.session)
+
+            # Make sure the directory for the data files exists
+            if not tf.gfile.Exists(DATA_PATH):
+                tf.gfile.MakeDirs(DATA_PATH)
 
             # Initialize summary writers to plot variables during training
             self.summary_op = tf.merge_all_summaries()
-            self.summary_writer = tf.train.SummaryWriter(os.path.expanduser('~')+'/tensorboard_data')
+            self.summary_writer = tf.train.SummaryWriter(TFLOG_PATH)
 
             # Initialize actor and critic networks
             self.actor_network = ActorNetwork(self.height, self.action_dim, self.depth, self.session,
@@ -92,7 +107,7 @@ class DDPG:
             self.saver = tf.train.Saver()
 
             # initialize the experience data manger
-            self.data_manager = DataManager(self.session.graph, self.session, BATCH_SIZE)
+            self.data_manager = DataManager(BATCH_SIZE, EXPERIENCE_PATH, self.session)
 
             # Should we load the pre-trained params?
             # If so: Load the full pre-trained net
@@ -104,7 +119,7 @@ class DDPG:
                 self.critic_network.restore_pretrained_weights(FILTER_LOAD_PATH)
                 self.actor_network.restore_pretrained_weights(FILTER_LOAD_PATH)
 
-            threads = tf.train.start_queue_runners(sess=self.session)
+            tf.train.start_queue_runners(sess=self.session)
             time.sleep(1)
 
             # Initialize a random process the Ornstein-Uhlenbeck process for action exploration
