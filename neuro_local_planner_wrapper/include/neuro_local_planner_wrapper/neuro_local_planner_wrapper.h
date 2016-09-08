@@ -57,7 +57,7 @@ namespace neuro_local_planner_wrapper
 
             bool isCrashed(double& reward);
 
-            bool isGoalReached(double& reward);
+            bool isAtGoal(double& reward);
 
             void initializeCustomizedCostmap();
 
@@ -102,6 +102,9 @@ namespace neuro_local_planner_wrapper
 
             // Publisher for toggling noise for exploration
             ros::Publisher noise_flag_pub_;
+
+            // TODO: remove
+            // ros::Publisher debug_marker_pub_;
 
             // Our costmap ros interface
             costmap_2d::Costmap2DROS* costmap_ros_;

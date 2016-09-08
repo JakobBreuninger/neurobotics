@@ -190,6 +190,7 @@ class AutoEncoder:
         minibatch = random.sample(self.replay_buffer, BATCH_SIZE)
 
         state_batch = np.asarray([data[0] for data in minibatch])
+        state_batch = np.divide(state_batch, 100.0)
 
         # Get loss
         current_loss, output_batch, _ = self.session.run([self.loss, self.map_output, self.optimizer],

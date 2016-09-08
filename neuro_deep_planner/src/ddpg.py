@@ -109,6 +109,9 @@ class DDPG:
             # initialize the experience data manger
             self.data_manager = DataManager(BATCH_SIZE, EXPERIENCE_PATH, self.session)
 
+            # Uncomment if collecting a buffer for the autoencoder
+            # self.buffer = deque()
+
             # Should we load the pre-trained params?
             # If so: Load the full pre-trained net
             # Else:  Initialize all variables the overwrite the conv layers with the pretrained filters
@@ -197,13 +200,17 @@ class DDPG:
         state = state.astype(float)
         state = np.divide(state, 100.0)
 
-
         # Get the action
         self.action = self.actor_network.get_action(state)
 
         # Are we using noise?
         if self.noise_flag:
             self.action += self.exploration_noise.noise()
+            # if action value lies outside of action bounds, rescale the action vector
+            if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
+                self.action = self.action*np.fabs(A0_BOUNDS[0]/self.action[0])
+            if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
+                self.action = self.action*np.fabs(A1_BOUNDS[0]/self.action[1])
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)
@@ -217,10 +224,15 @@ class DDPG:
             self.first_experience = False
         else:
             self.data_manager.store_experience_to_file(self.old_state, self.old_action, reward, state,
-                                                        is_episode_finished)
+                                                       is_episode_finished)
+
+            # Uncomment if collecting data for the auto_encoder
+            # experience = (self.old_state, self.old_action, reward, state, is_episode_finished)
+            # self.buffer.append(experience)
 
         if is_episode_finished:
             self.first_experience = True
+            self.exploration_noise.reset()
 
         # Safe old state and old action for next experience
         self.old_state = state

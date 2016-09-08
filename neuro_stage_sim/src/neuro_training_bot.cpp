@@ -10,6 +10,9 @@
 #include <iostream>
 #include<vector>
 
+#include <boost/random.hpp>
+#include <boost/random/normal_distribution.hpp>
+
 // Publisher and subscribers
 ros::Publisher stage_pub;
 ros::Publisher move_base_goal_pub;
@@ -25,6 +28,9 @@ double x_min = -1.40;
 double y_max = 3.40;
 double y_min = -1.50;
 double o = 0.0;
+
+double new_pose_x = 0.0;
+double new_pose_y = 0.0;
 
 std::vector<nav_msgs::Odometry> robot_poses;
 
@@ -47,32 +53,45 @@ void publishNewGoal()
     double x;
     double y;
 
+    // Initialize the random value
+    boost::mt19937 rng;
+    boost::normal_distribution<> nd(0.0, 2.0);
+    boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > var_nor(rng, nd);
+
     // Check if the point is unoccupied
     bool collision = true;
     while (collision)
     {
         collision = false;
-        x = getRandomDouble(x_min, x_max, 2.00);
-        y = getRandomDouble(y_min, y_max, 2.00);
+        x = new_pose_x + var_nor();
+        y = new_pose_y + var_nor();
 
-        for (long unsigned i = 0; i < robot_poses.size(); i++)
+        // First check for the max x and y values
+        if (x > x_max + 2.0 || x < x_min + 2.0 || y > y_max + 2.0 || y < y_min + 2.0)
         {
+            collision = true;
+        }
+        else
+        {
+            // Now check for the costmap values
             pixel_position = (unsigned int)(x / 0.05) + (unsigned int)(y / 0.05) * 200;
-
-            // First check for the costmap values
             if (costmap_there && current_costmap.data.at(pixel_position) > 10)
             {
                 collision = true;
             }
-
-            // Now check for dynamic obstacles
-            if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
+            else
             {
-                collision = true;
+                // Now check for dynamic obstacles
+                for (long unsigned i = 0; i < robot_poses.size(); i++)
+                {
+                    if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
+                    {
+                        collision = true;
+                    }
+                }
             }
         }
     }
-
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.pose.position.z = 0.0;
     pose_stamped.pose.position.x = x;
@@ -85,6 +104,7 @@ void publishNewGoal()
 
 void publishNewPose()
 {
+
     double x;
     double y;
 
@@ -96,28 +116,29 @@ void publishNewPose()
         x = getRandomDouble(x_min, x_max, 2.00);
         y = getRandomDouble(y_min, y_max, 2.00);
 
-        for (long unsigned i = 0; i < robot_poses.size(); i++)
+        // First check for the costmap values
+        pixel_position = (unsigned int)(x / 0.05) + (unsigned int)(y / 0.05) * 200;
+        if (costmap_there && current_costmap.data.at(pixel_position) > 10)
         {
-            pixel_position = (unsigned int)(x / 0.05) + (unsigned int)(y / 0.05) * 200;
-
-            // First check for the costmap values
-            if (costmap_there && current_costmap.data.at(pixel_position) > 10)
+            collision = true;
+        }
+        else
+        {
+            for (long unsigned i = 0; i < robot_poses.size(); i++)
             {
-                collision = true;
-            }
-
-            // Now check for dynamic obstacles
-            if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
-            {
-                collision = true;
+                // Now check for dynamic obstacles
+                if (dist(x, y, robot_poses.at(i).pose.pose.position.x, robot_poses.at(i).pose.pose.position.y) < 0.8)
+                {
+                    collision = true;
+                }
             }
         }
     }
 
     geometry_msgs::Pose pose;
     pose.position.z = 0.0;
-    pose.position.x = x;
-    pose.position.y = y;
+    pose.position.x = new_pose_x = x;
+    pose.position.y = new_pose_y = y;
     pose.orientation.z = 1.0;
     pose.orientation.w = o;
     stage_pub.publish(pose);
@@ -131,7 +152,7 @@ void botCallback(const std_msgs::Bool new_round)
         publishNewPose();
 
         // Make sure that the global planner is aware of the new position
-        ros::Rate r(1);
+        ros::Rate r(4);
         r.sleep();
 
         // Send new goal position to move_base

@@ -24,7 +24,7 @@ FILTER3 = 32
 # FILTER4 = 64
 
 # How fast is learning
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 
 # How fast does the target net track
 TARGET_DECAY = 0.9999

@@ -29,6 +29,9 @@ namespace neuro_local_planner_wrapper
         {
             ros::NodeHandle private_nh("~/" + name);
 
+            // TODO: remove
+            // debug_marker_pub_ = private_nh.advertise<visualization_msgs::Marker>( "goal_point", 0 );
+
             // Publishers & Subscribers
             g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
             l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
@@ -240,7 +243,7 @@ namespace neuro_local_planner_wrapper
 
 
     // Checks if the robot reached the goal
-    bool NeuroLocalPlannerWrapper::isGoalReached(double& reward)
+    bool NeuroLocalPlannerWrapper::isAtGoal(double& reward)
     {
         // Get current position of robot in odom frame
         costmap_ros_->getRobotPose(current_pose_);
@@ -261,9 +264,9 @@ namespace neuro_local_planner_wrapper
             ROS_ERROR("%s",ex.what());
         }
 
-        // Translation
-        double x_current_pose_map_frame = current_pose_.getOrigin().getX() + stamped_transform.getOrigin().getX();
-        double y_current_pose_map_frame = current_pose_.getOrigin().getY() + stamped_transform.getOrigin().getY();
+        // Translation TODO: WHYYY? + -> -
+        double x_current_pose_map_frame = current_pose_.getOrigin().getX() - stamped_transform.getOrigin().getX();
+        double y_current_pose_map_frame = current_pose_.getOrigin().getY() - stamped_transform.getOrigin().getY();
 
         // Rotation
         double roll, pitch, yaw;
@@ -276,7 +279,35 @@ namespace neuro_local_planner_wrapper
         // Get distance from robot to goal -> for now we only consider distance but I think we could also include
         // orientation
         double dist = sqrt(pow((x_current_pose_map_frame - goal_position.pose.position.x), 2.0)
-                           + pow((y_current_pose_map_frame  -goal_position.pose.position.y), 2.0));
+                           + pow((y_current_pose_map_frame - goal_position.pose.position.y), 2.0));
+
+        // TODO: Publish a marker for visualization of the two dynamic obstacles
+//        visualization_msgs::Marker marker;
+//
+//        marker.header.frame_id = "map";
+//        marker.header.stamp = ros::Time();
+//        marker.ns = "my_namespace";
+//        marker.id = 0;
+//        marker.type = visualization_msgs::Marker::CUBE;
+//        marker.action = visualization_msgs::Marker::ADD;
+//        marker.pose.position.x = x_current_pose_map_frame;
+//        marker.pose.position.y = y_current_pose_map_frame;
+//        marker.pose.position.z = 0.125;
+//        tf::Quaternion quaternion;
+//        quaternion.setRPY(0.0, 0.0, 0.0);
+//        marker.pose.orientation.x = quaternion.getX();
+//        marker.pose.orientation.y = quaternion.getY();
+//        marker.pose.orientation.z = quaternion.getZ();
+//        marker.pose.orientation.w = quaternion.getW();
+//        marker.scale.x = 0.22;
+//        marker.scale.y = 0.22;
+//        marker.scale.z = 0.5;
+//        marker.color.a = 1.0; // Don't forget to set the alpha!
+//        marker.color.r = 0.15;
+//        marker.color.g = 0.15;
+//        marker.color.b = 0.15;
+//
+//        debug_marker_pub_.publish(marker);
 
         // Check if the robot has reached the goal
         if(dist < goalTolerance)
@@ -375,7 +406,7 @@ namespace neuro_local_planner_wrapper
         {
             double reward = 0.0;
 
-            if (isCrashed(reward) || isGoalReached(reward))
+            if (isCrashed(reward) || isAtGoal(reward))
             {
                 // New episode so restart the time count
                 start_time_ = ros::Time::now().toSec();
