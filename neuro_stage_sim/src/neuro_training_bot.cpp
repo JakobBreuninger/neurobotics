@@ -32,6 +32,9 @@ double o = 0.0;
 double new_pose_x = 0.0;
 double new_pose_y = 0.0;
 
+// Seed the random numbers
+boost::mt19937 rng(42);
+
 std::vector<nav_msgs::Odometry> robot_poses;
 
 nav_msgs::OccupancyGrid current_costmap;
@@ -54,8 +57,7 @@ void publishNewGoal()
     double y;
 
     // Initialize the random value
-    boost::mt19937 rng;
-    boost::normal_distribution<> nd(0.0, 2.0);
+    boost::normal_distribution<> nd(0.0, 3.0);
     boost::variate_generator<boost::mt19937&, boost::normal_distribution<> > var_nor(rng, nd);
 
     // Check if the point is unoccupied

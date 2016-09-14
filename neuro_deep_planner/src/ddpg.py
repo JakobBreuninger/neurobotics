@@ -18,35 +18,34 @@ from state_visualizer import CostmapVisualizer
 BATCH_SIZE = 32
 
 # How big is our discount factor for rewards
-GAMMA = 0.95
+GAMMA = 0.99
 
 # How does our noise behave (MU = Center value, THETA = How strong is noise pulled to MU, SIGMA = Variance of noise)
 MU = 0.0
-THETA = 0.10
-SIGMA = 0.10
+THETA = 0.15
+SIGMA = 0.20
 
 # Action boundaries
-A0_BOUNDS = [-0.3, 0.3]
-A1_BOUNDS = [-0.3, 0.3]
+A0_BOUNDS = [-0.4, 0.4]
+A1_BOUNDS = [-0.4, 0.4]
 
 # Should we load a saved net
 PRE_TRAINED_NETS = False
 
 # If we use a pretrained net
-NET_SAVE_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/pre_trained_networks"
 NET_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir)+"/pre_trained_networks/pre_trained_networks"
 
-# If we don't use a pretrained net we should load pre-trained filters from this path
-FILTER_LOAD_PATH = os.path.join(os.path.dirname(__file__), os.pardir) + "/pre_trained_filters/pre_trained_filters"
-
 # Data Directory
-DATA_PATH = os.path.expanduser('~') + '/data_rl_nav'
+DATA_PATH = os.path.expanduser('~') + '/rl_nav_data'
 
 # path to tensorboard data
 TFLOG_PATH = DATA_PATH + '/tf_logs'
 
 # path to experience files
 EXPERIENCE_PATH = DATA_PATH + '/experiences'
+
+# path to trained net files
+NET_SAVE_PATH = DATA_PATH + '/weights/weights'
 
 # Should we use an existing initial buffer with experiences
 NEW_INITIAL_BUFFER = False
@@ -57,10 +56,21 @@ VISUALIZE_BUFFER = False
 # How often are we saving the net
 SAVE_STEP = 100000
 
+# Max training step with noise
+MAX_NOISE_STEP = 3000000
+
 
 class DDPG:
 
     def __init__(self):
+
+        # Make sure all the directories exist
+        if not tf.gfile.Exists(TFLOG_PATH):
+            tf.gfile.MakeDirs(TFLOG_PATH)
+        if not tf.gfile.Exists(EXPERIENCE_PATH):
+            tf.gfile.MakeDirs(EXPERIENCE_PATH)
+        if not tf.gfile.Exists(NET_SAVE_PATH):
+            tf.gfile.MakeDirs(NET_SAVE_PATH)
 
         # Initialize our session
         self.session = tf.Session()
@@ -119,8 +129,6 @@ class DDPG:
                 self.saver.restore(self.session, NET_LOAD_PATH)
             else:
                 self.session.run(tf.initialize_all_variables())
-                self.critic_network.restore_pretrained_weights(FILTER_LOAD_PATH)
-                self.actor_network.restore_pretrained_weights(FILTER_LOAD_PATH)
 
             tf.train.start_queue_runners(sess=self.session)
             time.sleep(1)
@@ -167,6 +175,7 @@ class DDPG:
             y_batch = []
             next_action_batch = self.actor_network.target_evaluate(next_state_batch)
             q_value_batch = self.critic_network.target_evaluate(next_state_batch, next_action_batch)
+
             for i in range(0, BATCH_SIZE):
                 if is_episode_finished_batch[i]:
                     y_batch.append([reward_batch[i]])
@@ -205,12 +214,14 @@ class DDPG:
 
         # Are we using noise?
         if self.noise_flag:
-            self.action += self.exploration_noise.noise()
+            # scale noise down to 0 at training step 3000000
+            if self.training_step < MAX_NOISE_STEP:
+                self.action += (MAX_NOISE_STEP - self.training_step) / MAX_NOISE_STEP * self.exploration_noise.noise()
             # if action value lies outside of action bounds, rescale the action vector
             if self.action[0] < A0_BOUNDS[0] or self.action[0] > A0_BOUNDS[1]:
-                self.action = self.action*np.fabs(A0_BOUNDS[0]/self.action[0])
+                self.action *= np.fabs(A0_BOUNDS[0]/self.action[0])
             if self.action[1] < A0_BOUNDS[0] or self.action[1] > A0_BOUNDS[1]:
-                self.action = self.action*np.fabs(A1_BOUNDS[0]/self.action[1])
+                self.action *= np.fabs(A1_BOUNDS[0]/self.action[1])
 
         # Life q value output for this action and state
         self.print_q_value(state, self.action)

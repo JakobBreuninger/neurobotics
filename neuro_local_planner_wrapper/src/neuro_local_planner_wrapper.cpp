@@ -281,34 +281,6 @@ namespace neuro_local_planner_wrapper
         double dist = sqrt(pow((x_current_pose_map_frame - goal_position.pose.position.x), 2.0)
                            + pow((y_current_pose_map_frame - goal_position.pose.position.y), 2.0));
 
-        // TODO: Publish a marker for visualization of the two dynamic obstacles
-//        visualization_msgs::Marker marker;
-//
-//        marker.header.frame_id = "map";
-//        marker.header.stamp = ros::Time();
-//        marker.ns = "my_namespace";
-//        marker.id = 0;
-//        marker.type = visualization_msgs::Marker::CUBE;
-//        marker.action = visualization_msgs::Marker::ADD;
-//        marker.pose.position.x = x_current_pose_map_frame;
-//        marker.pose.position.y = y_current_pose_map_frame;
-//        marker.pose.position.z = 0.125;
-//        tf::Quaternion quaternion;
-//        quaternion.setRPY(0.0, 0.0, 0.0);
-//        marker.pose.orientation.x = quaternion.getX();
-//        marker.pose.orientation.y = quaternion.getY();
-//        marker.pose.orientation.z = quaternion.getZ();
-//        marker.pose.orientation.w = quaternion.getW();
-//        marker.scale.x = 0.22;
-//        marker.scale.y = 0.22;
-//        marker.scale.z = 0.5;
-//        marker.color.a = 1.0; // Don't forget to set the alpha!
-//        marker.color.r = 0.15;
-//        marker.color.g = 0.15;
-//        marker.color.b = 0.15;
-//
-//        debug_marker_pub_.publish(marker);
-
         // Check if the robot has reached the goal
         if(dist < goalTolerance)
         {
@@ -357,51 +329,7 @@ namespace neuro_local_planner_wrapper
     // Callback function for the subscriber to the laser scan
     void NeuroLocalPlannerWrapper::buildStateRepresentation(sensor_msgs::LaserScan laser_scan)
     {
-        // Safe the
-        int now = (int)ros::Time::now().toSec();
-        if (noise_flag_ && (now - temp_time_) > 3000)
-        {
-            temp_crash_count_ = crash_counter_;
-            temp_goal_count_ = goal_counter_;
-
-            noise_flag_ = false;
-
-            std_msgs::Bool msg;
-            msg.data = 0;
-
-            noise_flag_pub_.publish(msg);
-
-            temp_time_ = now;
-        }
-        if (!noise_flag_ && (now - temp_time_) > 600)
-        {
-            std::pair<int, int> temp_count;
-            temp_count.first = crash_counter_ - temp_crash_count_;
-            temp_count.second = goal_counter_ - temp_goal_count_;
-
-            plot_list_.push_back(temp_count);
-
-            // open file for printing
-            std::ofstream outfile;
-            std::string my_file_path = "/home/breuning/results/counters.csv";
-            outfile.open(my_file_path.c_str());
-
-            for (unsigned int i = 0; i < plot_list_.size(); i++)
-            {
-                outfile << plot_list_.at(i).first << "," << plot_list_.at(i).second << std::endl;
-            }
-
-            outfile.close();
-
-            noise_flag_ = true;
-
-            std_msgs::Bool msg;
-            msg.data = 1;
-
-            noise_flag_pub_.publish(msg);
-
-            temp_time_ = now;
-        }
+        // Check for collision or goal reached
         if (is_running_)
         {
             double reward = 0.0;

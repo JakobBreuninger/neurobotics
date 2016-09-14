@@ -23,7 +23,7 @@ FILTER3 = 32
 # FILTER4 = 64
 
 # How fast is learning
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0005
 
 # How much do we regularize the weights of the net
 REGULARIZATION_DECAY = 0.0
